@@ -6,6 +6,7 @@ NAME = fly_in
 PYTHON = python3
 UV = $(shell command -v uv 2> /dev/null || echo $(HOME)/.local/bin/uv)
 UV_PROJECT_ENVIRONMENT ?= .venv
+MAP = "maps/challenger/01_the_impossible_dream.txt"
 
 SRC = src
 
@@ -23,10 +24,10 @@ install:
 	@$(UV) sync
 
 run:
-	@$(UV) run python -m $(SRC)
+	@$(UV) run python -m $(SRC) $(MAP)
 
 debug:
-	@$(UV) run python -m pudb -m $(SRC)
+	@$(UV) run python -m pdb -m $(SRC) $(MAP)
 
 lint:
 	@echo "Running flake8..."
