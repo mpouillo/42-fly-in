@@ -29,7 +29,7 @@ def parse_map(filepath) -> Dict[str, Any]:
     map_dict: Dict[str, Any] = {
         "nb_drones": 0,
         "hubs": {},
-        "connections": {}
+        "connections": []
     }
     flag_start: bool = False
     flag_end: bool = False
@@ -41,7 +41,7 @@ def parse_map(filepath) -> Dict[str, Any]:
             continue
 
         if ':' not in line:
-            raise ValueError(f"missing ':' separator in line {i + 1}")
+            raise ValueError(f"missing ':' separator at line {i + 1}")
 
         # The first line must define the number of drones
         if n == 0:
@@ -76,8 +76,9 @@ def parse_map(filepath) -> Dict[str, Any]:
             case "hub":
                 parse_hub(map_dict, value)
             case "connection":
-                # parse_connection(map_dict, value)
-                pass
+                parse_connection(map_dict, value)
+            case _:
+                raise ValueError("invalid value in map file")
         n += 1
 
     if not flag_start:
@@ -94,7 +95,13 @@ def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
     Raise ValueError if any value is invalid.
     """
 
-    name, x, y, metadata = (v.strip() for v in value.split(' ', 3))
+    values = [v.strip() for v in value.split(' ', 3)]
+    if len(values) < 3:
+        raise ValueError("missing arguments for hub value")
+    elif len(values) == 3:
+        name, x, y = values
+    elif len(values) == 4:
+        name, x, y, metadata = values
 
     if not name:
         raise ValueError("hub cannot be None")
@@ -142,7 +149,10 @@ def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
     flag_color = 0
     flag_max_drones = 0
     for v in md_values:
-        key, val = v.split('=', 1)
+        try:
+            key, val = v.split('=', 1)
+        except BaseException:
+            raise ValueError("missing '=' for metadata value")
         match key:
             case "zone":
                 if flag_zone:
@@ -157,7 +167,7 @@ def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
                     raise ValueError(
                         f"duplicate 'color' metadata for '{name}'"
                     )
-                if val not in ALLOWED_COLORS:
+                if not val.isalpha() or val not in ALLOWED_COLORS:
                     raise ValueError(
                         f"invalid 'color' metadata for '{name}'"
                     )
@@ -177,13 +187,13 @@ def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
                 raise ValueError(f"invalid metadata for '{name}'")
 
 
-"""
 def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
     values = [v.strip() for v in value.split(' ', 1)]
     if len(values) == 0:
         raise ValueError("connection value cannot be empty")
     elif len(values) == 1:
-        connection = values
+        connection = values[0]
+        metadata = None
     else:
         connection, metadata = values
 
@@ -196,14 +206,16 @@ def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
     name1, name2 = hubs
 
     if name1 not in map_dict["hubs"].keys():
-        raise ValueError(f"connection to undefined {name1} hub")
+        raise ValueError(f"connection to undefined hub '{name1}'")
     if name2 not in map_dict["hubs"].keys():
-        raise ValueError(f"connection to undefined {name2} hub")
+        raise ValueError(f"connection to undefined hub '{name2}'")
 
     dict_entry.update({"name1": name1})
     dict_entry.update({"name2": name2})
+    dict_entry.update({"max_link_capacity": 1})
 
     if not metadata:
+        map_dict["connections"].append(dict_entry)
         return
 
     if not (metadata.startswith('[') and metadata.endswith(']')):
@@ -228,5 +240,4 @@ def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
             case _:
                 raise ValueError("invalid connection metadata")
 
-    map_dict["connections"].update(dict_entry)
-"""
+    map_dict["connections"].append(dict_entry)

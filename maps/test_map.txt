@@ -1,0 +1,22 @@
+# TEST
+nb_drones: 25
+
+# Test
+start_hub: start 0 0 [color=green max_drones=25]
+
+hub: zone1 1 0 [color=red max_drones=1 zone=priority]
+hub: zone2 2 0 [color=red max_drones=1]
+hub: zone3 3 0 [color=red max_drones=1 zone=restricted]
+hub: zone4 4 0 [color=red max_drones=1]
+hub: zone5 5 0 [color=red max_drones=1]
+
+end_hub: end 21 0 [color=rainbow max_drones=25]
+
+##Test
+# Test #
+
+connection: start-zone1 [max_link_capacity=5]
+connection: zone1-zone2 [max_link_capacity=10]
+connection: zone2-zone3 [max_link_capacity=1]
+connection: zone3-zone4 [max_link_capacity=1]
+connection: zone4-zone5 [max_link_capacity=1]

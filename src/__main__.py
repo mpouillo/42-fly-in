@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 from src.parser import parse_args, parse_map
 
 
@@ -10,7 +11,7 @@ def main() -> None:
     try:
         map_dict = parse_map(args.map_file)
     except BaseException as e:
-        print("Error while parsing map file:", e)
+        sys.exit(f"Error while parsing map file: {e}")
 
     from pprint import pprint
     pprint(map_dict)
