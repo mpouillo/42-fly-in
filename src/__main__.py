@@ -3,7 +3,7 @@
 import os
 import sys
 from src.parser import parse_args, parse_map
-from src.view import run_gui
+from src.view import Game
 
 
 def main() -> None:
@@ -16,8 +16,8 @@ def main() -> None:
 
     from pprint import pprint
     pprint(map_dict)
-
-    run_gui(map_dict)
+    game = Game(map_dict)
+    game.run()
 
 
 if __name__ == "__main__":
