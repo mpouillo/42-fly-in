@@ -31,4 +31,7 @@ TODO
 
 ## Resources
 
-TODO
+- <https://stackoverflow.com/questions/19472530/representing-graphs-data-structure-in-python>
+- <https://www.raylib.com/cheatsheet/cheatsheet.html>
+- <https://electronstudio.github.io/raylib-python-cffi/pyray.html>
+- <https://pub.dev/documentation/raylib/latest/raylib/>

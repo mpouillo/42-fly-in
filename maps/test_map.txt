@@ -10,7 +10,7 @@ hub: zone3 3 0 [color=red max_drones=1 zone=restricted]
 hub: zone4 4 0 [color=red max_drones=1]
 hub: zone5 5 0 [color=red max_drones=1]
 
-end_hub: end 21 0 [color=rainbow max_drones=25]
+end_hub: end 6 0 [color=rainbow max_drones=25]
 
 ##Test
 # Test #

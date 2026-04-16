@@ -210,8 +210,8 @@ def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
     if name2 not in map_dict["hubs"].keys():
         raise ValueError(f"connection to undefined hub '{name2}'")
 
-    dict_entry.update({"name1": name1})
-    dict_entry.update({"name2": name2})
+    dict_entry.update({"node1": name1})
+    dict_entry.update({"node2": name2})
     dict_entry.update({"max_link_capacity": 1})
 
     if not metadata:
