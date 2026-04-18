@@ -14,6 +14,7 @@ ALLOWED_COLORS = [
     "blue",
     "brown",
     "crimson",
+    "cyan",
     "darkred",
     "gold",
     "green",
@@ -22,7 +23,8 @@ ALLOWED_COLORS = [
     "purple",
     "rainbow",
     "red",
-    "violet"
+    "violet",
+    "yellow"
 ]
 
 COLOR_MAP = {
@@ -30,6 +32,7 @@ COLOR_MAP = {
     "blue": pr.BLUE,
     "brown": pr.BROWN,
     "crimson": (220, 20, 60, 255),
+    "cyan": (0, 255, 255, 255),
     "darkred": (139, 0, 0, 255),
     "gold": pr.GOLD,
     "green": pr.GREEN,
@@ -38,7 +41,8 @@ COLOR_MAP = {
     "purple": pr.PURPLE,
     "rainbow": pr.RAYWHITE,
     "red": pr.RED,
-    "violet": pr.VIOLET
+    "violet": pr.VIOLET,
+    "yellow": pr.YELLOW
 }
 
 SCREEN_WIDTH = 1280
@@ -49,3 +53,4 @@ NODE_SIZE = 0.2
 LINE_WIDTH = 3
 
 DRONE_SIZE = 0.2
+DRONE_SPEED = 1

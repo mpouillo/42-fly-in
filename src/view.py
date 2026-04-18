@@ -43,12 +43,29 @@ class Game():
 
         return connections
 
+    def get_start_hub_name(self):
+        for name, hub in self.map_dict["hubs"].items():
+            if hub["type"] == "start_hub":
+                return name
+        return None
+
+    def get_end_hub_name(self):
+        for name, hub in self.map_dict["hubs"].items():
+            if hub["type"] == "end_hub":
+                return name
+        return None
+
     def run(self):
         player = Player()
         camera = pr.Camera3D((0, 1, 0), (1, 1, 0), (0, 1, 0),
                              CAMERA_FOV, pr.CAMERA_PERSPECTIVE)
-        start_hub = self.map_dict["hubs"].get("start") # Not correct, to change later
-        drone = Drone(pr.Vector3(start_hub["x"], 1, start_hub["y"]))
+        path = self.graph.find_path(self.get_start_hub_name(),
+                                    self.get_end_hub_name())
+        hub_list = [pr.Vector3(self.map_dict["hubs"][hub]["x"], 1,
+                    self.map_dict["hubs"][hub]["y"]) for hub in path]
+        drone = Drone(hub_list[0])
+        i = 0
+        started = False
 
         while not pr.window_should_close():
             player.controls()
@@ -65,14 +82,20 @@ class Game():
             self.draw_connections()
             self.draw_hubs()
 
-            if pr.is_key_pressed(pr.KEY_RIGHT): # Test: moving drone on keypress
-                drone.move(2, 2)
+            if i == len(hub_list):
+                started = False
+            if started:
+                if not drone.move(hub_list[i]):
+                    i += 1
+
+            if pr.is_key_pressed(pr.KEY_BACKSPACE):
+                started = not started
+
             drone.update()
-
             pr.end_mode_3d()
-
             pr.end_drawing()
 
+        drone.unload()
         pr.close_window()
 
     def draw_connections(self):

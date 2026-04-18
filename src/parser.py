@@ -66,15 +66,15 @@ def parse_map(filepath) -> Dict[str, Any]:
             case "start_hub":
                 if flag_start:
                     raise ValueError("only one 'start_hub' line is allowed")
-                parse_hub(map_dict, value)
+                parse_hub(map_dict, key, value)
                 flag_start = True
             case "end_hub":
                 if flag_end:
                     raise ValueError("only one 'end_hub' line is allowed")
-                parse_hub(map_dict, value)
+                parse_hub(map_dict, key, value)
                 flag_end = True
             case "hub":
-                parse_hub(map_dict, value)
+                parse_hub(map_dict, key, value)
             case "connection":
                 parse_connection(map_dict, value)
             case _:
@@ -89,7 +89,7 @@ def parse_map(filepath) -> Dict[str, Any]:
     return (map_dict)
 
 
-def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
+def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
     """
     Parse hub values and store them in map_dict.
     Raise ValueError if any value is invalid.
@@ -112,7 +112,7 @@ def parse_hub(map_dict: Dict[str, Any], value: str) -> None:
     if "-" in name or " " in name:
         raise ValueError("hub name cannot contain dashes or spaces")
 
-    map_dict["hubs"].update({name: {"x": 0, "y": 0}})
+    map_dict["hubs"].update({name: {"x": 0, "y": 0, "type": key}})
 
     try:
         int(x)
