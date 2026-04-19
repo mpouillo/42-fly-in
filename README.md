@@ -35,3 +35,6 @@ TODO
 - <https://www.raylib.com/cheatsheet/cheatsheet.html>
 - <https://electronstudio.github.io/raylib-python-cffi/pyray.html>
 - <https://pub.dev/documentation/raylib/latest/raylib/>
+- [Dijkstras Shortest Path Algorithm Explained | With Example | Graph Theory](https://www.youtube.com/watch?v=bZkzH5x0SKU)
+- <https://www.geeksforgeeks.org/dsa/shortest-path-unweighted-graph/>
+- <https://www.geeksforgeeks.org/dsa/dijkstras-algorithm-for-adjacency-list-representation-greedy-algo-8/>

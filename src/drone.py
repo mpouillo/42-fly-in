@@ -4,14 +4,16 @@ from src.constants import DRONE_SPEED
 
 
 class Drone:
-    def __init__(self, start_pos):
-        self.pos = start_pos
-        self.direction = pr.Vector3(1, 0, 1)
+    def __init__(self, position, direction):
+        self.pos = position
         self.model = pr.load_model("assets/drone.obj")
         self.speed = DRONE_SPEED
+        self.set_direction(direction)
 
-        self.yaw = math.radians(90)
-        self.pitch = 0.0
+    def set_direction(self, direction):
+        self.yaw = math.atan2(direction.x, direction.z)
+        ground_dist = math.sqrt(direction.x ** 2 + direction.z ** 2)
+        self.pitch = math.atan2(direction.y, ground_dist)
 
     def move(self, target) -> bool:
 
@@ -20,13 +22,8 @@ class Drone:
                           target.z - self.pos.z)
 
         distance = pr.vector3_length(diff)
+        self.set_direction(diff)
 
-        # Update angle
-        self.yaw = math.atan2(diff.x, diff.z)
-        ground_dist = math.sqrt(diff.x ** 2 + diff.z ** 2)
-        self.pitch = math.atan2(diff.y, ground_dist)
-
-        # Update position
         if distance > 0.1:
             move_step = pr.vector3_scale(
                 pr.vector3_normalize(diff), self.speed * pr.get_frame_time()

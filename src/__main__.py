@@ -21,8 +21,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except BaseException as e:
-        print(e)
-        os._exit(1)
+    main() # Don't forget to try except before pushing

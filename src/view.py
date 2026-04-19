@@ -17,18 +17,22 @@ class Game():
     def __init__(self, map_dict):
         self.map_dict = map_dict
         self.connections = self.get_connections_from_map(map_dict)
-        self.graph = Graph(self.connections, True)
+        self.graph = Graph(self.connections, False)
 
-        hub_max = max(map_dict["hubs"].values(),
-                      key=lambda hub: hub["x"] + hub["y"])
-        hub_min = min(map_dict["hubs"].values(),
-                      key=lambda hub: hub["x"] + hub["y"])
-        self.map_size = (hub_max["x"] + hub_max["y"]
-                         - (hub_min["x"] + hub_min["y"]))
+        print(self.graph.bfs(self.get_start_hub_name(), self.get_end_hub_name()))
+
+        s_x = min(map_dict["hubs"].values(), key=lambda hub: hub["x"])
+        s_y = min(map_dict["hubs"].values(), key=lambda hub: hub["y"])
+        b_x = max(map_dict["hubs"].values(), key=lambda hub: hub["x"])
+        b_y = max(map_dict["hubs"].values(), key=lambda hub: hub["y"])
+        self.map_size = pr.Vector2(b_x["x"] - s_x["x"] + 1, b_y["y"] - s_y["y"] + 1)
+        self.map_center = pr.Vector2((b_x["x"] + s_x["x"]) / 2, (b_y["y"] + s_y["y"]) / 2)
 
         pr.init_window(SCREEN_WIDTH, SCREEN_HEIGHT, "Fly-in")
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
+
+        self.color_toggle = False
 
     @staticmethod
     def get_connections_from_map(map_dict):
@@ -59,13 +63,17 @@ class Game():
         player = Player()
         camera = pr.Camera3D((0, 1, 0), (1, 1, 0), (0, 1, 0),
                              CAMERA_FOV, pr.CAMERA_PERSPECTIVE)
-        path = self.graph.find_path(self.get_start_hub_name(),
+        path = self.graph.dijkstra(self.get_start_hub_name(),
                                     self.get_end_hub_name())
         hub_list = [pr.Vector3(self.map_dict["hubs"][hub]["x"], 1,
                     self.map_dict["hubs"][hub]["y"]) for hub in path]
-        drone = Drone(hub_list[0])
-        i = 0
-        started = False
+        drone = Drone(hub_list[0], pr.Vector3(1, 0, 0))
+        i = 1
+        running = False
+
+        texture = pr.load_texture_from_image(pr.load_image("assets/ground.jpg"))
+        plane = pr.load_model_from_mesh(pr.gen_mesh_plane(self.map_size.x, self.map_size.y, 1, 1))
+        plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
 
         while not pr.window_should_close():
             player.controls()
@@ -76,23 +84,28 @@ class Game():
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera)
 
-            pr.draw_grid(self.map_size * 10, NODE_SIZE)
-            pr.draw_plane((0, -0.01, 0),
-                          (self.map_size * 2, self.map_size * 2), pr.WHITE)
+            pr.draw_model(plane, pr.Vector3(self.map_center.x, 0, self.map_center.y), 1, pr.WHITE)
+
             self.draw_connections()
             self.draw_hubs()
 
             if i == len(hub_list):
-                started = False
-            if started:
+                running = False
+            if running:
                 if not drone.move(hub_list[i]):
                     i += 1
+                    running = False
 
             if pr.is_key_pressed(pr.KEY_BACKSPACE):
-                started = not started
+                running = not running
+
+            if pr.is_key_pressed(pr.KEY_L):
+                self.color_toggle = not self.color_toggle
 
             drone.update()
             pr.end_mode_3d()
+            pr.draw_text("Total turns: " + str(i - 1), 11, 11, 24, pr.BLACK)
+            pr.draw_text("Total turns: " + str(i - 1), 10, 10, 24, pr.RAYWHITE)
             pr.end_drawing()
 
         drone.unload()
@@ -104,11 +117,27 @@ class Game():
             start_y = self.map_dict["hubs"][c[0]]["y"]
             end_x = self.map_dict["hubs"][c[1]]["x"]
             end_y = self.map_dict["hubs"][c[1]]["y"]
-            pr.draw_line_3d((start_x, 0, start_y),
-                            (end_x, 0, end_y), pr.BLUE)
+            pr.draw_line_3d((start_x, 0.01, start_y),
+                            (end_x, 0.01, end_y), pr.BLUE)
 
     def draw_hubs(self):
         for hub in self.map_dict.get("hubs", {}).values():
-            color = COLOR_MAP[hub['metadata']["color"]]
-            pr.draw_cylinder((hub["x"], 0, hub["y"]), NODE_SIZE,
-                             NODE_SIZE, 0.01, 32, color)
+            if self.color_toggle:
+                color = self.get_hub_color(hub["metadata"]["zone"])
+            else:
+                color = COLOR_MAP[hub['metadata']["color"]]
+            pr.draw_cylinder((hub["x"], 0.02, hub["y"]), NODE_SIZE,
+                             NODE_SIZE, 0.05, 32, color)
+
+    def get_hub_color(self, hub_type: str):
+        match hub_type:
+            case "normal":
+                return pr.GREEN
+            case "blocked":
+                return pr.BLACK
+            case "restricted":
+                return pr.RED
+            case "priority":
+                return pr.YELLOW
+            case _:
+                return pr.PURPLE
