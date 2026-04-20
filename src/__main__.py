@@ -8,15 +8,8 @@ from src.view import Game
 
 def main() -> None:
     args = parse_args()
-
-    try:
-        map_dict = parse_map(args.map_file)
-    except BaseException as e:
-        sys.exit(f"Error while parsing map file: {e}")
-
-    from pprint import pprint
-    pprint(map_dict)
-    game = Game(map_dict)
+    map_data = parse_map(args.map_file)
+    game = Game(map_data)
     game.run()
 
 

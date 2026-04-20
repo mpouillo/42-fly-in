@@ -100,6 +100,7 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
         raise ValueError("missing arguments for hub value")
     elif len(values) == 3:
         name, x, y = values
+        metadata = None
     elif len(values) == 4:
         name, x, y, metadata = values
 
