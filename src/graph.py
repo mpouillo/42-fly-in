@@ -10,14 +10,17 @@ class Graph(object):
         self._directed = directed
         self._graph = defaultdict(dict)
         self.add_connections()
-        self.drones = self.drone_state()
+        self.drone_map = self.drone_state()
 
     def drone_state(self):
         drone_map = defaultdict(dict)
         for name, data in self._map_data["hubs"].items():
-            drone_map[name] = data["metadata"]["max_drones"]
+            drone_map[name] = {
+                "capacity": data["metadata"]["max_drones"],
+                "type": data["metadata"]["zone"],
+                "drones": []
+            }
         return drone_map
-
 
     def __str__(self):
         return f"{self.__class__.__name__} ({dict(self._graph)})"

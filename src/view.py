@@ -33,6 +33,7 @@ class Game():
         pr.rl_set_line_width(LINE_WIDTH)
 
         self.color_toggle = False
+        self.turns = 0
 
     def get_start_hub_name(self):
         for name, hub in self.map_data["hubs"].items():
@@ -59,7 +60,10 @@ class Game():
 
         drones = []
         for i in range(self.map_data["nb_drones"]):
-            drone = Drone(pr.Vector3(0, i, 0), pr.Vector3(1, 0, 0))
+            drone = Drone(i,
+                          pr.Vector3(0, i / self.map_data["nb_drones"], 0),
+                          pr.Vector3(1, 0, 0),
+                          self.graph.drone_map)
             drone.compute_targets(self.graph, self.get_start_hub_name(),
                                   self.get_end_hub_name())
             drones.append(drone)
@@ -69,15 +73,13 @@ class Game():
             camera.position = player.pos
             camera.target = pr.vector3_add(player.pos, player.direction)
 
+            #   Toggle better colors
+            if pr.is_key_pressed(pr.KEY_L):
+                self.color_toggle = not self.color_toggle
+
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera)
-
-            # Drone movement
-            if pr.is_key_pressed(pr.KEY_BACKSPACE):
-                if not any(drone.moving for drone in drones):
-                    for drone in drones:
-                        drone.run()
 
             #   Map rendering
             pr.draw_model(plane, pr.Vector3(
@@ -85,21 +87,27 @@ class Game():
             self.draw_connections()
             self.draw_hubs()
 
+            # Drone movement
+            if pr.is_key_down(pr.KEY_BACKSPACE):
+                if any(not drone.at_goal for drone in drones):
+                    if not any(drone.moving for drone in drones):
+                        self.turns += 1
+                        for drone in drones:
+                            drone.run()
+                        print("Turn", self.turns)
+
             #  Drone updates
             for drone in drones:
-                drone.move(self.graph)
-
-            #   Toggle better colors
-            if pr.is_key_pressed(pr.KEY_L):
-                self.color_toggle = not self.color_toggle
-
-            for drone in drones:
+                drone.move()
                 drone.update()
+
             pr.end_mode_3d()
             pr.end_drawing()
 
+        # Cleanup
         for drone in drones:
             drone.unload()
+
         pr.close_window()
 
     def draw_connections(self):
