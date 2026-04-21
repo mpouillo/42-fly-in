@@ -12,6 +12,8 @@ class Drone(Entity):
         self.speed = DRONE_SPEED
         self.targets = []
         self.step = 1
+        self.moving = False
+        self.at_goal = False
 
     def update(self):
         rotation_axis = pr.Vector3(0, 1, 0)
@@ -28,22 +30,24 @@ class Drone(Entity):
         if not path:
             self.targets = []
             return
-        print(path)
         targets = [pr.Vector3(graph._map_data["hubs"][hub]["x"], 1,
                    graph._map_data["hubs"][hub]["y"]) for hub in path]
         self.targets = targets
 
     def move(self, graph):
-        if not 0 <= self.step < len(self.targets):
-            return False
-        if not self.check_next_hub_free(graph):
-            return False
+        if self.at_goal or not self.moving:
+            return
         if super().move(self.targets[self.step]):
             self.step += 1
-            return True
+            self.stop()
+        if self.step == len(self.targets):
+            self.at_goal = True
+
+    def stop(self):
+        self.moving = False
+
+    def run(self):
+        self.moving = True
 
     def unload(self):
         pr.unload_model(self.model)
-
-    def check_next_hub_free(self, graph):
-        return True

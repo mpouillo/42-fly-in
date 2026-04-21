@@ -13,6 +13,10 @@ class Entity:
         self.pitch = math.atan2(direction.y, ground_dist)
 
     def move(self, target: pr.Vector3) -> bool:
+        """
+        Updates position.
+        Returns False if it still needs to move, or True if it arrived.
+        """
         diff = pr.Vector3(target.x - self.pos.x,
                           target.y - self.pos.y,
                           target.z - self.pos.z)

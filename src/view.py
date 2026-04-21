@@ -57,14 +57,12 @@ class Game():
             pr.gen_mesh_plane(self.map_size.x, self.map_size.y, 1, 1))
         plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
 
-        arrived = [True] * self.map_data["nb_drones"]
         drones = []
         for i in range(self.map_data["nb_drones"]):
             drone = Drone(pr.Vector3(0, i, 0), pr.Vector3(1, 0, 0))
-            drone.compute_targets(self.graph, self.get_start_hub_name(), self.get_end_hub_name())
+            drone.compute_targets(self.graph, self.get_start_hub_name(),
+                                  self.get_end_hub_name())
             drones.append(drone)
-
-        running = False
 
         while not pr.window_should_close():
             player.controls()
@@ -75,26 +73,23 @@ class Game():
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera)
 
+            # Drone movement
             if pr.is_key_pressed(pr.KEY_BACKSPACE):
-                if False not in arrived:
-                    running = True
-                    arrived = [False] * self.map_data["nb_drones"]
+                if not any(drone.moving for drone in drones):
+                    for drone in drones:
+                        drone.run()
 
-            if running is True:
-                for i, drone in enumerate(drones):
-                    if arrived[i]:
-                        continue
-                    if drone.move(self.graph):
-                        arrived[i] = True
-                if False not in arrived:
-                    running = False
-
+            #   Map rendering
             pr.draw_model(plane, pr.Vector3(
                 self.map_center.x, 0, self.map_center.y), 1, pr.WHITE)
-
             self.draw_connections()
             self.draw_hubs()
 
+            #  Drone updates
+            for drone in drones:
+                drone.move(self.graph)
+
+            #   Toggle better colors
             if pr.is_key_pressed(pr.KEY_L):
                 self.color_toggle = not self.color_toggle
 
