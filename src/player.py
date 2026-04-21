@@ -4,9 +4,9 @@ from src.constants import MOVEMENT_SPEED
 
 
 class Player():
-    def __init__(self):
-        self.pos = pr.Vector3(0, 1, 0)
-        self.direction = pr.Vector3(1, 0, 1)
+    def __init__(self, position, direction):
+        self.position = position
+        self.direction = direction
 
         self.yaw = math.atan2(self.direction.x, self.direction.z)
         self.pitch = math.radians(-45)
@@ -43,10 +43,10 @@ class Player():
         if forward != 0 and sideward != 0:
             speed *= 0.707
 
-        nx, ny, nz = self.pos.x, self.pos.y, self.pos.z
+        nx, ny, nz = self.position.x, self.position.y, self.position.z
 
         nx += speed * (sin_yaw * forward - cos_yaw * sideward)
         ny += speed * upward
         nz += speed * (cos_yaw * forward + sin_yaw * sideward)
 
-        self.pos.x, self.pos.y, self.pos.z = nx, ny, nz
+        self.position.x, self.position.y, self.position.z = nx, ny, nz

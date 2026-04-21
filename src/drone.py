@@ -17,13 +17,12 @@ class Drone(Entity):
         self.step = 1
         self.sleep = False
         self.moving = False
-        self.at_goal = False
 
     def update(self):
         rotation_axis = pr.Vector3(0, 1, 0)
         rotation_angle = math.degrees(self.yaw) - 90
         pr.draw_model_ex(self.model,
-                         self.pos,
+                         self.position,
                          rotation_axis,
                          rotation_angle,
                          pr.Vector3(0.2, 0.2, 0.2),
@@ -41,19 +40,25 @@ class Drone(Entity):
                                 graph._map_data["hubs"][hub]["y"])
             ) for hub in path
         ]
+        self.drone_map[self.targets[self.step - 1].name]["drones"].append(self.id)
+
+    def at_goal(self):
+        return self.step >= len(self.targets)
 
     def move(self):
-        if self.at_goal or not self.moving or not self.can_move():
-            self.moving = False
+        if not self.moving:
             return
 
         target = self.targets[self.step]
-        if super().move(target.position):
+        drones_on_hub = self.drone_map[target.name]["drones"]
+        new_y = drones_on_hub.index(self.id) / len(drones_on_hub)
+        if super().move(
+            pr.vector3_add(target.position, pr.Vector3(0, new_y, 0))
+        ):
             self.step += 1
             self.stop()
-
-        if self.step == len(self.targets):
-            self.at_goal = True
+            if self.at_goal():
+                self.drone_map[target.name]["drones"].remove(self.id)
 
     def can_move(self):
         current = self.drone_map[self.targets[self.step - 1].name]
@@ -75,10 +80,21 @@ class Drone(Entity):
         self.moving = False
 
     def run(self):
-        target = self.drone_map[self.targets[self.step - 1].name]["drones"]
-        if self.id in target:
-            target.remove(self.id)
-        self.moving = True
+        if self.at_goal():
+            return
+
+        current = self.drone_map[self.targets[self.step - 1].name]
+        target = self.drone_map[self.targets[self.step].name]
+
+        if current["type"] == "restricted":
+            self.sleep = not self.sleep
+
+        if not self.sleep and target["capacity"] > len(target["drones"]):
+            target["drones"].append(self.id)
+            current["drones"].remove(self.id)
+
+        if self.id in target["drones"]:
+            self.moving = True
 
     def unload(self):
         pr.unload_model(self.model)

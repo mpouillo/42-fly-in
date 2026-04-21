@@ -1,11 +1,10 @@
 import pyray as pr
 from src.graph import Graph
-from src.player import Player
 from src.drone import Drone
+from src.camera import Camera
 from src.constants import (
     SCREEN_HEIGHT,
     SCREEN_WIDTH,
-    CAMERA_FOV,
     TARGET_FPS,
     NODE_SIZE,
     COLOR_MAP,
@@ -48,9 +47,7 @@ class Game():
         return None
 
     def run(self):
-        player = Player()
-        camera = pr.Camera3D((0, 1, 0), (1, 1, 0), (0, 1, 0),
-                             CAMERA_FOV, pr.CAMERA_PERSPECTIVE)
+        camera = Camera((1, 1, 0), (0, 1, 0), self.map_center)
 
         texture = pr.load_texture_from_image(
             pr.load_image("assets/ground.jpg"))
@@ -61,17 +58,20 @@ class Game():
         drones = []
         for i in range(self.map_data["nb_drones"]):
             drone = Drone(i,
-                          pr.Vector3(0, i / self.map_data["nb_drones"], 0),
+                          pr.Vector3(0, 1 + i / self.map_data["nb_drones"], 0),
                           pr.Vector3(1, 0, 0),
                           self.graph.drone_map)
             drone.compute_targets(self.graph, self.get_start_hub_name(),
                                   self.get_end_hub_name())
+            if i == 0 and not drone.targets:
+                print("No valid path found between start_hub and end_hub!")
             drones.append(drone)
 
         while not pr.window_should_close():
-            player.controls()
-            camera.position = player.pos
-            camera.target = pr.vector3_add(player.pos, player.direction)
+            # Camera
+            if pr.is_key_pressed(pr.KEY_U):
+                camera.toggle_perspective()
+            camera.update()
 
             #   Toggle better colors
             if pr.is_key_pressed(pr.KEY_L):
@@ -79,7 +79,7 @@ class Game():
 
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
-            pr.begin_mode_3d(camera)
+            pr.begin_mode_3d(camera.camera)
 
             #   Map rendering
             pr.draw_model(plane, pr.Vector3(
@@ -88,8 +88,8 @@ class Game():
             self.draw_hubs()
 
             # Drone movement
-            if pr.is_key_down(pr.KEY_BACKSPACE):
-                if any(not drone.at_goal for drone in drones):
+            if pr.is_key_down(pr.KEY_R):
+                if any(not drone.at_goal() for drone in drones):
                     if not any(drone.moving for drone in drones):
                         self.turns += 1
                         for drone in drones:
@@ -139,4 +139,4 @@ class Game():
             case "priority":
                 return pr.YELLOW
             case _:
-                return pr.PURPLE
+                return pr.RAYWHITE

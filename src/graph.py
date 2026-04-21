@@ -31,11 +31,11 @@ class Graph(object):
             data = self._map_data["hubs"][node2]
             match data["metadata"]["zone"]:
                 case "blocked":
-                    weight = float('inf') # To change later
+                    weight = float('inf')
                 case "restricted":
                     weight = 2
                 case "priority":
-                    weight = 0.5 # To change later
+                    weight = 0.5
                 case _:
                     weight = 1
             self._graph[node1][node2] = weight
@@ -78,10 +78,16 @@ class Graph(object):
         # Create graph with index values instead of strings
         for name1, neighbor in self._graph.items():
             for name2, weight in neighbor.items():
+                if weight == float('inf'):
+                    continue
                 add_edge(graph, nodes.index(name1), nodes.index(name2), weight)
 
         # Get shortest path from end to start
         prev = shortest_path(graph, nodes.index(start))
+
+        # Return empty list if no complete path found
+        if prev and len(prev) > 1 and None in prev[1:]:
+            return []
 
         # Iterate from end to start and convert indexes to strings
         path = [end]
