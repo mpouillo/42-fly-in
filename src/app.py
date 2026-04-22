@@ -49,7 +49,7 @@ class App():
         screen_width = pr.get_screen_width()
         screen_height = pr.get_screen_height()
         pr.set_trace_log_level(pr.LOG_ERROR)    # Silence info logs
-        pr.init_window(screen_width, screen_height, "Fly-in")
+        pr.init_window(screen_width // 2, screen_height // 2, "Fly-in")
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
 
@@ -74,17 +74,9 @@ class App():
         return assets
 
     def load_drones(self):
-        drones: List[Drone] = []
-        for i in range(self.map_data["nb_drones"]):
-            drone = Drone(i,
-                          pr.Vector3(0, 1 + i / self.map_data["nb_drones"], 0),
-                          pr.Vector3(1, 0, 0),
-                          self.graph)
-            drone.compute_targets(self.get_start_hub_name(),
-                                  self.get_end_hub_name())
-            if i == 0 and not drone.targets:
-                print("No valid path found between start_hub and end_hub!")
-            drones.append(drone)
+        drones: List[Drone] = [
+            Drone(self, i) for i in range(self.map_data["nb_drones"])
+        ]
         return drones
 
     def unload_assets(self, assets: List[Any]):
@@ -111,13 +103,13 @@ class App():
 
             # Drone movement
             if pr.is_key_down(pr.KEY_R):
-                if any(not drone.at_goal() for drone in drones):
-                    if not any(drone.moving for drone in drones):
-                        self.graph.reset_connections()
-                        self.turns += 1
-                        for drone in drones:
-                            drone.move()
-                        print("Turn", self.turns)
+                if not any(drone.moving for drone in drones):
+                    self.graph.reset_connections()
+                    self.turns += 1
+                    for drone in drones:
+                        path = drone.compute_path()
+                        drone.go_to(path[0])
+                    print("Turn", self.turns)
 
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
@@ -132,7 +124,6 @@ class App():
             #  Drone updates
             for drone in drones:
                 drone.update()
-                drone.render()
 
             pr.end_mode_3d()
             pr.end_drawing()

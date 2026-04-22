@@ -3,11 +3,12 @@ import pyray as pr
 
 
 class Entity:
-    def __init__(self, position: pr.Vector3, direction: pr.Vector3):
-        self.position = position
-        self.direction = direction
+    def __init__(self):
+        self.position = pr.Vector3(0, 0, 0)
+        self.direction = pr.Vector3(0, 0, 0)
+        self.yaw = 0
+        self.pitch = 0
         self.speed: float = 1
-        self.set_direction(direction)
 
     def set_direction(self, new_direction: pr.Vector3) -> None:
         self.yaw = math.atan2(new_direction.x, new_direction.z)

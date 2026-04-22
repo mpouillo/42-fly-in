@@ -1,5 +1,6 @@
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 import heapq
+import pyray as pr
 
 
 class Graph(object):
@@ -110,8 +111,15 @@ class Graph(object):
                 self.weight_graph[nodes[p]][nodes[cur]] += 1
                 restricted_hub = True
 
-        path.reverse()
-        return path
+        Target = namedtuple("Target", ["name", "position"])
+        named_path = [Target(
+                hub, pr.Vector3(self.map_data["hubs"][hub]["x"], 1,
+                                self.map_data["hubs"][hub]["y"])
+            ) for hub in path
+        ]
+
+        named_path.reverse()
+        return named_path
 
     def reset_connections(self) -> None:
         for hub, data in self.drone_map.items():
