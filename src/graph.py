@@ -5,51 +5,54 @@ import heapq
 class Graph(object):
     """ Graph data structure, undirected by default. """
 
-    def __init__(self, map_data, directed=False):
-        self._map_data = map_data
-        self._directed = directed
-        self._graph = defaultdict(dict)
-        self.add_connections()
-        self.drone_map = self.drone_state()
+    def __init__(self, map_data):
+        self.map_data = map_data
+        self.weight_graph = defaultdict(dict)
+        self.drone_map = defaultdict(dict)
 
-    def drone_state(self):
-        drone_map = defaultdict(dict)
-        for name, data in self._map_data["hubs"].items():
-            drone_map[name] = {
-                "capacity": data["metadata"]["max_drones"],
-                "type": data["metadata"]["zone"],
-                "drones": []
-            }
-        return drone_map
+        self.init_graph()
+        self.init_drone_data()
 
     def __str__(self):
-        return f"{self.__class__.__name__} ({dict(self._graph)})"
+        return f"{self.__class__.__name__} ({dict(self.weight_graph)})"
 
-    def add_connections(self):
-        for connection in self._map_data["connections"]:
-            node1, node2 = connection.get("node1"), connection.get("node2")
-            data = self._map_data["hubs"][node2]
-            match data["metadata"]["zone"]:
-                case "blocked":
-                    weight = float('inf')
-                case "restricted":
-                    weight = 2
-                case "priority":
-                    weight = 0.5
-                case _:
-                    weight = 1
-            self._graph[node1][node2] = weight
-            self._graph[node2][node1] = weight
+    def init_graph(self):
+        for hub1, neighbors in self.map_data["connections"].items():
+            for hub2, max_link_capacity in neighbors.items():
+                hub2_data = self.map_data["hubs"][hub2]
+                match hub2_data["metadata"]["zone"]:
+                    case "blocked":
+                        weight = float('inf')
+                    case "restricted":
+                        weight = 2
+                    case "priority":
+                        weight = 0.5
+                    case _:
+                        weight = 1
+                self.weight_graph[hub1][hub2] = weight
+                self.weight_graph[hub2][hub1] = weight
 
-    def get_connections(self):
-        connections = []
-        for hub1, neighbors in self._graph.items():
+    # def get_connections(self):
+    #     connections = []
+    #     for hub1, neighbors in self.weight_graph.items():
+    #         for hub2 in neighbors.keys():
+    #             connections.append((hub1, hub2))
+    #     return connections
+
+    def init_drone_data(self):
+        for name, data in self.map_data["hubs"].items():
+            self.drone_map[name] = {
+                "capacity": data["metadata"]["max_drones"],
+                "type": data["metadata"]["zone"],
+                "drones": [],
+                "links": defaultdict(dict)
+            }
+        for hub1, neighbors in self.map_data["connections"].items():
             for hub2 in neighbors.keys():
-                connections.append((hub1, hub2))
-        return connections
+                self.drone_map[hub1]["links"][hub2] = []
 
     def dijkstra(self, start, end):
-        nodes = list(self._graph.keys())
+        nodes = list(self.weight_graph.keys())
         graph = [[] for _ in range(len(nodes))]
         prev = [None] * len(nodes)
 
@@ -76,7 +79,7 @@ class Graph(object):
             return (prev)
 
         # Create graph with index values instead of strings
-        for name1, neighbor in self._graph.items():
+        for name1, neighbor in self.weight_graph.items():
             for name2, weight in neighbor.items():
                 if weight == float('inf'):
                     continue
@@ -92,16 +95,25 @@ class Graph(object):
         # Iterate from end to start and convert indexes to strings
         path = [end]
         cur = nodes.index(end)
+        restricted_hub = False
         while cur != nodes.index(start):
             p = cur
             cur = prev[cur]
             path.append(nodes[cur])
-            # Increasing weight if a drone selects a restricted hub
-            if self._map_data["hubs"][nodes[p]]["metadata"]["zone"] == (
-                "restricted"
+            if (
+                not restricted_hub
+                and self.map_data["hubs"][nodes[p]]["metadata"]["zone"] == (
+                    "restricted"
+                )
             ):
-                self._graph[nodes[cur]][nodes[p]] += 1
-                self._graph[nodes[p]][nodes[cur]] += 1
+                self.weight_graph[nodes[cur]][nodes[p]] += 1
+                self.weight_graph[nodes[p]][nodes[cur]] += 1
+                restricted_hub = True
 
         path.reverse()
         return path
+
+    def reset_connections(self) -> None:
+        for hub, data in self.drone_map.items():
+            for link in data["links"]:
+                self.drone_map[hub]["links"][link] = []

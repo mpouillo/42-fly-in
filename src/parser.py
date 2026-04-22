@@ -1,6 +1,7 @@
 import argparse
+from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 from src.constants import ALLOWED_COLORS, ALLOWED_ZONES
 
 
@@ -16,26 +17,26 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_map(filepath) -> Dict[str, Any]:
-    map_file = Path(filepath)
-    if not map_file.is_file:
+    file = Path(filepath)
+    if not file.is_file:
         raise ValueError("'map' argument is not a file")
-    if not map_file.suffix == ".txt":
+    if not file.suffix == ".txt":
         raise ValueError("map file extension should be '.txt'")
 
-    map_data: List[str] = []
-    with map_file.open("r") as f:
-        map_data = [line.strip("\n") for line in f.readlines()]
+    with file.open("r") as f:
+        file_data = [line.strip("\n") for line in f.readlines()]
 
-    map_dict: Dict[str, Any] = {
+    map_data: Dict[str, Any] = {
         "nb_drones": 0,
-        "hubs": {},
-        "connections": []
+        "hubs": defaultdict(dict),
+        "connections": defaultdict(dict)
     }
+
+    flag_nb_drones: bool = False
     flag_start: bool = False
     flag_end: bool = False
-    n = 0
 
-    for i, line in enumerate(map_data):
+    for i, line in enumerate(file_data):
         # Skip comments or empty lines
         if line.startswith("#") or not line.strip():
             continue
@@ -44,7 +45,7 @@ def parse_map(filepath) -> Dict[str, Any]:
             raise ValueError(f"missing ':' separator at line {i + 1}")
 
         # The first line must define the number of drones
-        if n == 0:
+        if not flag_nb_drones:
             key, value = (v.strip() for v in line.split(':', 1))
             if key != "nb_drones":
                 raise ValueError("first line must be 'nb_drones: <number>'")
@@ -57,8 +58,8 @@ def parse_map(filepath) -> Dict[str, Any]:
                     "invalid 'nb_drones' value "
                     "(must be a valid positive integer)"
                 )
-            map_dict["nb_drones"] = int(value)
-            n += 1
+            map_data["nb_drones"] = int(value)
+            flag_nb_drones = True
             continue
 
         key, value = (v.strip() for v in line.split(':', 1))
@@ -66,27 +67,56 @@ def parse_map(filepath) -> Dict[str, Any]:
             case "start_hub":
                 if flag_start:
                     raise ValueError("only one 'start_hub' line is allowed")
-                parse_hub(map_dict, key, value)
+                parse_hub(map_data, key, value)
                 flag_start = True
             case "end_hub":
                 if flag_end:
                     raise ValueError("only one 'end_hub' line is allowed")
-                parse_hub(map_dict, key, value)
+                parse_hub(map_data, key, value)
                 flag_end = True
             case "hub":
-                parse_hub(map_dict, key, value)
+                parse_hub(map_data, key, value)
             case "connection":
-                parse_connection(map_dict, value)
+                continue
             case _:
-                raise ValueError("invalid value in map file")
-        n += 1
+                raise ValueError(f"invalid value in map file: '{key}'")
 
     if not flag_start:
         raise ValueError("missing 'start_hub' value")
     if not flag_end:
         raise ValueError("missing 'end_hub' value")
 
-    return (map_dict)
+    flag_nb_drones = False
+
+    # Parse connections after everything else
+    # to detect missing hubs and avoid false positives
+    for i, line in enumerate(file_data):
+        # Skip comments or empty lines
+        if line.startswith("#") or not line.strip():
+            continue
+
+        if ':' not in line:
+            raise ValueError(f"missing ':' separator at line {i + 1}")
+
+        # Skip nb_drones lines (checked during first loop)
+        if not flag_nb_drones:
+            flag_nb_drones = True
+            continue
+
+        key, value = (v.strip() for v in line.split(':', 1))
+        match key:
+            case "start_hub":
+                continue
+            case "end_hub":
+                continue
+            case "hub":
+                continue
+            case "connection":
+                parse_connection(map_data, value)
+            case _:
+                raise ValueError(f"invalid value in map file: '{key}'")
+
+    return (map_data)
 
 
 def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
@@ -131,12 +161,17 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
         )
     map_dict["hubs"][name]["y"] = int(y)
 
+    if key in ["start_hub", "end_hub"]:
+        max_drones = float('inf')
+    else:
+        max_drones = 1
+
     # Metadata is optional and enclosed in brackets
     map_dict["hubs"][name].update(
         {"metadata":
             {"zone": "normal",
              "color": "blue",
-             "max_drones": 1}
+             "max_drones": max_drones}
          }
     )
     if not metadata:
@@ -198,34 +233,35 @@ def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
     else:
         connection, metadata = values
 
-    dict_entry = {}
-
-    hubs = connection.split('-', 1)
-    if len(hubs) != 2:
+    # Validate hub names
+    try:
+        name1, name2 = connection.split('-', 1)
+    except BaseException:
         raise ValueError("missing hub name in connection")
-
-    name1, name2 = hubs
-
     if name1 not in map_dict["hubs"].keys():
         raise ValueError(f"connection to undefined hub '{name1}'")
     if name2 not in map_dict["hubs"].keys():
         raise ValueError(f"connection to undefined hub '{name2}'")
 
-    dict_entry.update({"node1": name1})
-    dict_entry.update({"node2": name2})
-    dict_entry.update({"max_link_capacity": 1})
+    # Append connections with default value of 1
+    map_dict["connections"][name1][name2] = 1
+    map_dict["connections"][name2][name1] = 1
 
+    # Stop here if no metadata
     if not metadata:
-        map_dict["connections"].append(dict_entry)
         return
 
+    # Validate metadata
     if not (metadata.startswith('[') and metadata.endswith(']')):
         raise ValueError("metadata must be enclosed in brackets")
 
     md_values = [v.strip() for v in metadata[1:-1].split()]
     flag_capacity = False
     for v in md_values:
-        key, val = v.split('=', 1)
+        try:
+            key, val = v.split('=', 1)
+        except BaseException:
+            raise ValueError("missing '=' for metadata value")
         match key:
             case "max_link_capacity":
                 if flag_capacity:
@@ -237,8 +273,7 @@ def parse_connection(map_dict: Dict[str, Any], value: str) -> None:
                         "'max_link_capacity' value must be "
                         "a valid positive integer"
                     )
-                dict_entry.update({"max_link_capacity": int(val)})
+                map_dict["connections"][name1][name2] = int(val)
+                map_dict["connections"][name2][name1] = int(val)
             case _:
-                raise ValueError("invalid connection metadata")
-
-    map_dict["connections"].append(dict_entry)
+                raise ValueError(f"invalid connection metadata '{key}'")

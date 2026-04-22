@@ -2,10 +2,12 @@
 nb_drones: 3
 
 # Test
-start_hub: start 0 0 [color=green max_drones=25]
-end_hub: zone1 1 0
+start_hub: start 0 0
+hub: hub1 1 0 [max_drones=2 zone=restricted]
+end_hub: end 2 0
 
 ##Test
 # Test #
 
-connection: start-zone1 [max_link_capacity=5]
+connection: start-hub1 [max_link_capacity=5]
+connection: hub1-end [max_link_capacity=5]

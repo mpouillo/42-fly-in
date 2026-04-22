@@ -8,7 +8,7 @@ class Camera(Player):
                  position: pr.Vector3,
                  direction: pr.Vector3,
                  orth_pos: pr.Vector2):
-        super().__init__(pr.Vector3(*position), pr.Vector3(*direction))
+        super().__init__(position, direction)
 
         self.fovy = CAMERA_FOVY_PERSPECTIVE
         self.perspective = pr.CAMERA_PERSPECTIVE
