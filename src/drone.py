@@ -34,52 +34,56 @@ class Drone(Entity, DroneAnim):
     def __init__(self, app, drone_id):
         Entity.__init__(self)
         DroneAnim.__init__(self)
-        if not hasattr(self, "model"):
-            print("wsh quoi")
         self.app = app
         self.id = drone_id
 
+        self.path = []
+        self.step = 0
         self.moving = False
         self.target = None
-        self.hub = None
 
-        self.move(self.app.get_start_hub_name(), True)
+        self.compute_path()
+        self.move(self.path[0].position, True)
 
     def compute_path(self):
-        start = self.hub
+        if self.path:
+            start = self.path[self.step].name
+        else:
+            start = self.app.get_start_hub_name()
         end = self.app.get_end_hub_name()
-        path = self.app.graph.dijkstra(start, end)
+        path_from_start = self.app.graph.dijkstra(start, end)
 
-        if not path:
-            path = [self.hub]
+        self.path.extend(path_from_start) # Fix stuff appending infinitely
 
-        return path
-
-    def go_to(self, target):
-        self.target = target
+    def go_next(self):
+        self.step = min(len(self.path), self.step + 1)
+        self.target = self.path[self.step]
         self.moving = True
-        pass
+
+    def go_prev(self):
+        self.step = max(0, self.step - 1)
+        self.target = self.path[self.step]
+        self.moving = True
 
     def update(self):
-        if self.target:
+        if self.moving and self.target:
             self.move(self.target.position)
 
             if self.position == self.target.position:
-                self.hub = self.target
-                self.target = None
+                print([p.name for p in self.path]) # Fix stuff appending infinitely
                 self.moving = False
+                self.target = None
 
         super().update()
 
     def move(self, position: pr.Vector3, instant=False):
-        if not position or position == self.position:
+        if not position:
             return
 
         if instant:
             self.position = position
         else:
-            # interpolate position
-            pass
+            super().move(position)
 
     def unload(self):
         pr.unload_model(self.model)

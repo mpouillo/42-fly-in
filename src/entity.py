@@ -18,11 +18,8 @@ class Entity:
         self.direction.y = math.sin(self.pitch)
         self.direction.z = math.cos(self.pitch) * math.cos(self.yaw)
 
-    def move(self, target: pr.Vector3) -> bool:
-        """
-        Updates position each frame, related to speed.
-        Returns False if it still needs to move, or True if it arrived.
-        """
+    def move(self, target: pr.Vector3) -> None:
+        """Updates position each frame, related to speed."""
         diff = pr.Vector3(target.x - self.position.x,
                           target.y - self.position.y,
                           target.z - self.position.z)
@@ -34,7 +31,5 @@ class Entity:
             move_step = pr.vector3_scale(pr.vector3_normalize(diff),
                                          self.speed * pr.get_frame_time())
             self.position = pr.vector3_add(self.position, move_step)
-            return False
-
-        # If arrived (distance < 0.5)
-        return True
+        else:
+            self.position = target

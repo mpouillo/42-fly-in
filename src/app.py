@@ -46,10 +46,10 @@ class App():
         return None
 
     def init_window(self) -> None:
-        screen_width = pr.get_screen_width()
-        screen_height = pr.get_screen_height()
+        screen_width = 1920
+        screen_height = 1080
         pr.set_trace_log_level(pr.LOG_ERROR)    # Silence info logs
-        pr.init_window(screen_width // 2, screen_height // 2, "Fly-in")
+        pr.init_window(screen_width, screen_height, "Fly-in")
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
 
@@ -102,13 +102,18 @@ class App():
                 self.color_toggle = not self.color_toggle
 
             # Drone movement
-            if pr.is_key_down(pr.KEY_R):
-                if not any(drone.moving for drone in drones):
-                    self.graph.reset_connections()
+            if not any(drone.moving for drone in drones):
+                if pr.is_key_down(pr.KEY_T):
                     self.turns += 1
                     for drone in drones:
-                        path = drone.compute_path()
-                        drone.go_to(path[0])
+                        drone.compute_path()
+                        drone.go_next()
+                    print("Turn", self.turns)
+                if pr.is_key_down(pr.KEY_R):
+                    self.turns = max(0, self.turns - 1)
+                    for drone in drones:
+                        drone.compute_path()
+                        drone.go_prev()
                     print("Turn", self.turns)
 
             pr.begin_drawing()
