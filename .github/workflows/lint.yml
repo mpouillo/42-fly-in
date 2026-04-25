@@ -1,0 +1,28 @@
+name: Lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.10'
+
+      - name: Dependencies
+        run: |
+          python3 -m pip install flake8
+          python3 -m pip install mypy
+
+      - name: Flake8
+        run:  python3 -m flake8 .
+
+      - name: Mypy Strict
+        run:  python3 -m mypy . --strict
