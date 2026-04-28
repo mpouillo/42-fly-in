@@ -89,27 +89,26 @@ class Graph(object):
         # Get shortest path from end to start
         prev = shortest_path(graph, nodes.index(start))
 
-        # Return empty list if no complete path found
-        if prev and len(prev) > 1 and None in prev[1:]:
-            return []
-
         # Iterate from end to start and convert indexes to strings
         path = [end]
         cur = nodes.index(end)
-        restricted_hub = False
-        while cur != nodes.index(start):
-            p = cur
+        # restricted_hub = False
+        while cur is not None and cur != nodes.index(start):
+            # p = cur
             cur = prev[cur]
             path.append(nodes[cur])
-            if (
-                not restricted_hub
-                and self.map_data["hubs"][nodes[p]]["metadata"]["zone"] == (
-                    "restricted"
-                )
-            ):
-                self.weight_graph[nodes[cur]][nodes[p]] += 1
-                self.weight_graph[nodes[p]][nodes[cur]] += 1
-                restricted_hub = True
+            #if (
+            #    not restricted_hub
+            #    and self.map_data["hubs"][nodes[p]]["metadata"]["zone"] == (
+            #        "restricted"
+            #    )
+            #):
+            #    self.weight_graph[nodes[cur]][nodes[p]] += 1
+            #    self.weight_graph[nodes[p]][nodes[cur]] += 1
+            #    restricted_hub = True
+
+        if cur is None:
+            path = [start]
 
         Target = namedtuple("Target", ["name", "position"])
         named_path = [Target(

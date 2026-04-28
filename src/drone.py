@@ -3,19 +3,22 @@ import pyray as pr
 from src.constants import DRONE_SPEED
 from src.entity import Entity
 
+ANIM_SPEED = 3
 
 class DroneAnim:
     def __init__(self):
         self.model: pr.Model = pr.load_model("assets/drone.obj")
         self.anim_offset = pr.Vector3(0, 0, 0)
         self.speed = DRONE_SPEED
+        self.anim_step = 0
 
     def render(self) -> None:
         """Draw Drone model at current position"""
         rotation_axis = pr.Vector3(0, 1, 0)
         rotation_angle = math.degrees(self.yaw) - 90
+        pos = pr.vector3_add(self.position, self.anim_offset)
         pr.draw_model_ex(self.model,
-                         self.position,
+                         pos,
                          rotation_axis,
                          rotation_angle,
                          pr.Vector3(0.2, 0.2, 0.2),
@@ -23,9 +26,11 @@ class DroneAnim:
 
     def animate(self):
         # Update position depending on animation state
-        pass
+        amplitude = 0.2
+        self.anim_offset.y = (1 + math.sin(self.anim_step)) * amplitude
 
     def update(self):
+        self.anim_step = (self.anim_step + pr.get_frame_time() * ANIM_SPEED) % (math.pi * 2)
         self.animate()
         self.render()
 
@@ -53,10 +58,10 @@ class Drone(Entity, DroneAnim):
         end = self.app.get_end_hub_name()
         path_from_start = self.app.graph.dijkstra(start, end)
 
-        self.path.extend(path_from_start) # Fix stuff appending infinitely
+        self.path = self.path[:self.step] + path_from_start
 
     def go_next(self):
-        self.step = min(len(self.path), self.step + 1)
+        self.step = min(len(self.path) - 1, self.step + 1)
         self.target = self.path[self.step]
         self.moving = True
 
@@ -70,7 +75,6 @@ class Drone(Entity, DroneAnim):
             self.move(self.target.position)
 
             if self.position == self.target.position:
-                print([p.name for p in self.path]) # Fix stuff appending infinitely
                 self.moving = False
                 self.target = None
 

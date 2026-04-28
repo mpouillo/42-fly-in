@@ -103,13 +103,13 @@ class App():
 
             # Drone movement
             if not any(drone.moving for drone in drones):
-                if pr.is_key_down(pr.KEY_T):
+                if pr.is_key_down(pr.KEY_T) and not any(drone.step == len(drone.path) - 1 for drone in drones):
                     self.turns += 1
                     for drone in drones:
                         drone.compute_path()
                         drone.go_next()
                     print("Turn", self.turns)
-                if pr.is_key_down(pr.KEY_R):
+                if pr.is_key_down(pr.KEY_R) and not any(drone.step == 0 for drone in drones):
                     self.turns = max(0, self.turns - 1)
                     for drone in drones:
                         drone.compute_path()
