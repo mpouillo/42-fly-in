@@ -1,4 +1,5 @@
 import math
+import random
 import pyray as pr
 from src.constants import DRONE_SPEED
 from src.entity import Entity
@@ -10,7 +11,7 @@ class DroneAnim:
         self.model: pr.Model = pr.load_model("assets/drone.obj")
         self.anim_offset = pr.Vector3(0, 0, 0)
         self.speed = DRONE_SPEED
-        self.anim_step = 0
+        self.anim_step = random.randrange(0, 628) / 100
 
     def render(self) -> None:
         """Draw Drone model at current position"""
@@ -51,18 +52,34 @@ class Drone(Entity, DroneAnim):
         self.move(self.path[0].position, True)
 
     def compute_path(self):
-        if self.path:
-            start = self.path[self.step].name
-        else:
-            start = self.app.get_start_hub_name()
+        # Update path, computing it with start at current drone position
+        start = self.app.get_start_hub_name()
         end = self.app.get_end_hub_name()
-        path_from_start = self.app.graph.dijkstra(start, end)
+        if not self.path:
+            self.path = self.app.graph.dijkstra(start, end)
+        else:
+            start = self.path[self.step].name
+            path_from_start = self.app.graph.dijkstra(start, end)
 
-        self.path = self.path[:self.step] + path_from_start
+            # Append end on calls if already at end
+            if len(path_from_start) == 1 and path_from_start[0].name in [p.name for p in self.path]:
+                self.path.extend(path_from_start)
+                return
+
+            # Append new path differently depending on if drone is on a restricted zone
+            if self.step > 0 and self.path[self.step].name == self.path[self.step - 1].name and self.app.graph.drone_map[self.path[self.step].name]["type"] == "restricted":
+                self.path = self.path[:self.step] + path_from_start[1:]
+            else:
+                self.path = self.path[:self.step] + path_from_start
 
     def go_next(self):
+        self.compute_path()
+        prev_target = self.path[self.step]
         self.step = min(len(self.path) - 1, self.step + 1)
         self.target = self.path[self.step]
+        self.app.graph.drone_map[self.target.name]["drones"].append(self.id)
+        if prev_target.name != self.target.name:
+            self.app.graph.drone_map[prev_target.name]["links"][self.target.name].append(self.id)
         self.moving = True
 
     def go_prev(self):
@@ -73,17 +90,14 @@ class Drone(Entity, DroneAnim):
     def update(self):
         if self.moving and self.target:
             self.move(self.target.position)
-
             if self.position == self.target.position:
                 self.moving = False
                 self.target = None
-
         super().update()
 
     def move(self, position: pr.Vector3, instant=False):
         if not position:
             return
-
         if instant:
             self.position = position
         else:

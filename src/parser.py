@@ -143,7 +143,14 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
     if "-" in name or " " in name:
         raise ValueError("hub name cannot contain dashes or spaces")
 
-    map_dict["hubs"].update({name: {"x": 0, "y": 0, "type": key}})
+    map_dict["hubs"][name] = {
+        "x": 0,
+        "y": 0,
+        "hub_type": key,
+        "zone": "normal",
+        "color": "blue",
+        "max_drones": 1
+    }
 
     try:
         int(x)
@@ -162,18 +169,9 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
     map_dict["hubs"][name]["y"] = int(y)
 
     if key in ["start_hub", "end_hub"]:
-        max_drones = float('inf')
-    else:
-        max_drones = 1
+        map_dict["hubs"][name]["max_drones"] = float('inf')
 
     # Metadata is optional and enclosed in brackets
-    map_dict["hubs"][name].update(
-        {"metadata":
-            {"zone": "normal",
-             "color": "blue",
-             "max_drones": max_drones}
-         }
-    )
     if not metadata:
         return
 
@@ -197,7 +195,7 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
                     )
                 if val not in ALLOWED_ZONES:
                     raise ValueError(f"invalid 'zone' metadata for '{name}'")
-                map_dict["hubs"][name]["metadata"]["zone"] = val
+                map_dict["hubs"][name]["zone"] = val
             case "color":
                 if flag_color:
                     raise ValueError(
@@ -207,7 +205,7 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
                     raise ValueError(
                         f"invalid 'color' metadata for '{name}'"
                     )
-                map_dict["hubs"][name]["metadata"]["color"] = val
+                map_dict["hubs"][name]["color"] = val
             case "max_drones":
                 if flag_max_drones:
                     raise ValueError(
@@ -218,7 +216,7 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str) -> None:
                         f"invalid 'max_drones' metadata for '{name}' "
                         "(must be a valid positive integer)"
                         )
-                map_dict["hubs"][name]["metadata"]["max_drones"] = int(val)
+                map_dict["hubs"][name]["max_drones"] = int(val)
             case _:
                 raise ValueError(f"invalid metadata for '{name}'")
 

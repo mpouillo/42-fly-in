@@ -16,11 +16,13 @@ from src.constants import (
 class App():
     def __init__(self, map_data):
         self.map_data = map_data
-        self.graph = Graph(map_data)
+        self.graph = Graph(self)
 
         self.compute_map_dimensions()
         self.color_toggle = False
         self.turns = 0
+        self.drones = []
+        self.assets = []
 
     def compute_map_dimensions(self) -> None:
         s_x = min(self.map_data["hubs"].values(), key=lambda hub: hub["x"])
@@ -35,13 +37,13 @@ class App():
 
     def get_start_hub_name(self):
         for name, hub in self.map_data["hubs"].items():
-            if hub["type"] == "start_hub":
+            if hub["hub_type"] == "start_hub":
                 return name
         return None
 
     def get_end_hub_name(self):
         for name, hub in self.map_data["hubs"].items():
-            if hub["type"] == "end_hub":
+            if hub["hub_type"] == "end_hub":
                 return name
         return None
 
@@ -55,7 +57,6 @@ class App():
 
     def load_assets(self) -> List[Any]:
         """Loads and returns a list of assets"""
-        assets: List[Any] = []
         Asset = namedtuple("Asset", ["model", "texture", "pos", "scale"])
 
         # Ground plane
@@ -64,32 +65,29 @@ class App():
         plane = pr.load_model_from_mesh(
             pr.gen_mesh_plane(self.map_size.x, self.map_size.y, 1, 1))
         plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
-        assets.append(Asset(
+        self.assets.append(Asset(
             plane,
             texture,
             pr.Vector3(self.map_center.x, 0, self.map_center.y),
             1
         ))
 
-        return assets
-
-    def load_drones(self):
-        drones: List[Drone] = [
-            Drone(self, i) for i in range(self.map_data["nb_drones"])
-        ]
-        return drones
-
     def unload_assets(self, assets: List[Any]):
-        for asset in assets:
+        for asset in self.assets:
             pr.unload_texture(asset.texture)
             pr.unload_model(asset.model)
+        self.assets.clear()
+
+    def load_drones(self):
+        for i in range(self.map_data["nb_drones"]):
+            self.drones.append(Drone(self, i))
 
     def run(self):
         camera = Camera(pr.Vector3(-1, 1, 0),
                         pr.Vector3(0, 1, 1),
                         self.map_center)
-        assets = self.load_assets()
-        drones = self.load_drones()
+        self.load_assets()
+        self.load_drones()
 
         while not pr.window_should_close():
             # Camera
@@ -102,40 +100,46 @@ class App():
                 self.color_toggle = not self.color_toggle
 
             # Drone movement
-            if not any(drone.moving for drone in drones):
-                if pr.is_key_down(pr.KEY_T) and not any(drone.step == len(drone.path) - 1 for drone in drones):
+            self.graph.reset()
+            if not any(drone.moving for drone in self.drones):
+                if pr.is_key_pressed(pr.KEY_T) and any(drone.step != len(drone.path) - 1 for drone in self.drones):
                     self.turns += 1
-                    for drone in drones:
-                        drone.compute_path()
+                    print("Turn", self.turns)
+                    for drone in self.drones:
                         drone.go_next()
-                    print("Turn", self.turns)
-                if pr.is_key_down(pr.KEY_R) and not any(drone.step == 0 for drone in drones):
+                if pr.is_key_pressed(pr.KEY_R) and any(drone.step != 0 for drone in self.drones):
                     self.turns = max(0, self.turns - 1)
-                    for drone in drones:
-                        drone.compute_path()
-                        drone.go_prev()
                     print("Turn", self.turns)
+                    for drone in self.drones:
+                        drone.go_prev()
 
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera.camera)
 
             #   Map rendering
-            for asset in assets:
+            for asset in self.assets:
                 pr.draw_model(asset.model, asset.pos, asset.scale, pr.WHITE)
             self.draw_connections()
             self.draw_hubs()
 
             #  Drone updates
-            for drone in drones:
+            for drone in self.drones:
                 drone.update()
 
             pr.end_mode_3d()
+
+            # HUD display
+            ft = pr.get_frame_time()
+            if ft != 0:
+                pr.draw_text("FPS: " + str(int(1 / pr.get_frame_time())), 20, 20, 48, pr.WHITE)
+            pr.draw_text("TURN: " + str(self.turns), 20, 80, 48, pr.WHITE)
+
             pr.end_drawing()
 
         # Cleanup
-        self.unload_assets(assets)
-        for drone in drones:
+        self.unload_assets(self.assets)
+        for drone in self.drones:
             drone.unload()
 
         pr.close_window()
@@ -166,11 +170,18 @@ class App():
     def draw_hubs(self):
         for hub in self.map_data.get("hubs", {}).values():
             if self.color_toggle:
-                color = self.get_hub_color(hub["metadata"]["zone"])
+                color = self.get_hub_color(hub["zone"])
             else:
-                color = COLOR_MAP[hub['metadata']["color"]]
-            pr.draw_cylinder((hub["x"], 0.02, hub["y"]), NODE_SIZE,
+                color = COLOR_MAP[hub["color"]]
+            pr.draw_cylinder((hub["x"], 0, hub["y"]), NODE_SIZE,
                              NODE_SIZE, 0.05, 32, color)
+
+            # Draw max drones values
+            img = pr.image_text(str(hub["max_drones"]), 1, pr.RAYWHITE)
+            texture = pr.load_texture_from_image(img)
+            plane = pr.load_model_from_mesh(pr.gen_mesh_plane(0.1, 0.1, 1, 1))
+            plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
+            pr.draw_model(plane, pr.Vector3(hub["x"], 0.07, hub["y"]), 1, pr.WHITE)
 
     def get_hub_color(self, hub_type: str):
         match hub_type:
