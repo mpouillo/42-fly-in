@@ -45,14 +45,18 @@ class Graph(object):
             for hub2 in neighbors.keys():
                 self.drone_map[hub1]["links"][hub2] = []
 
-    def blocked_this_turn(self, a, b) -> int:
+    def blocked_this_turn(self, a, b) -> float:
         a, b = self.nodes[a], self.nodes[b]
+        # Adds 1 weight if hub is full this turn
         if (
             len(self.drone_map[b]["drones"]) >= self.drone_map[b]["capacity"]
             or len(self.drone_map[a]["links"][b]) >= self.map_data["connections"][a][b]
         ):
             return 1
-        return 1
+        # Allows a free hub to be picked over an equally weighted occupied one
+        if (0 < len(self.drone_map[b]["drones"]) < self.drone_map[b]["capacity"]):
+            return 0.5
+        return 0
 
     def dijkstra(self, start, end):
         nodes = self.nodes
@@ -70,7 +74,7 @@ class Graph(object):
                 distance, a = heapq.heappop(pq)
                 for b, weight in graph[a]:
                     w = dist[a] + weight
-                    if a == 0:
+                    if a == start:
                         w += self.blocked_this_turn(a, b)
                     if w < dist[b]:
                         prev[b] = a
