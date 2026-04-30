@@ -8,7 +8,7 @@ ANIM_SPEED = 3
 
 class DroneAnim:
     def __init__(self):
-        self.model: pr.Model = pr.load_model("assets/drone.obj")
+        self.model: pr.Model = pr.load_model("assets/drone.glb")
         self.anim_offset = pr.Vector3(0, 0, 0)
         self.speed = DRONE_SPEED
         self.anim_step = random.randrange(0, 628) / 100
