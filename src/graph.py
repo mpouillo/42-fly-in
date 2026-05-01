@@ -106,8 +106,10 @@ class Graph(object):
             if cur is None:
                 break
             path.append(nodes[cur])
+            # Double restricted nodes in path
             if (self.drone_map[nodes[cur]]["type"] == "restricted"):
                 path.append(nodes[cur])
+            # Double nodes if blocked that turn (max_drones or max_link_capacity)
             if (
                 len(self.drone_map[nodes[nex]]["drones"]) >= self.drone_map[nodes[nex]]["capacity"]
                 or len(self.drone_map[nodes[cur]]["links"][nodes[nex]]) >= self.map_data["connections"][nodes[cur]][nodes[nex]]
