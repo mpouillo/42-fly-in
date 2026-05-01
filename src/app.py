@@ -104,12 +104,10 @@ class App():
             if not any(drone.moving for drone in self.drones):
                 if pr.is_key_pressed(pr.KEY_T) and any(drone.step != len(drone.path) - 1 for drone in self.drones):
                     self.turns += 1
-                    print("Turn", self.turns)
                     for drone in self.drones:
                         drone.go_next()
                 if pr.is_key_pressed(pr.KEY_R) and any(drone.step != 0 for drone in self.drones):
                     self.turns = max(0, self.turns - 1)
-                    print("Turn", self.turns)
                     for drone in self.drones:
                         drone.go_prev()
 
