@@ -132,7 +132,7 @@ class App():
             # HUD display
             ft = pr.get_frame_time()
             if ft != 0:
-                pr.draw_text("FPS: " + str(int(1 / pr.get_frame_time())), 20, 20, 48, pr.WHITE)
+                pr.draw_text("FPS: " + str(round(1 / pr.get_frame_time())), 20, 20, 48, pr.WHITE)
             pr.draw_text("TURN: " + str(self.turns), 20, 80, 48, pr.WHITE)
 
             pr.end_drawing()
@@ -166,6 +166,8 @@ class App():
                 1,
                 pr.WHITE
             )
+            pr.unload_model(plane)
+            pr.unload_texture(texture)
 
     def draw_hubs(self):
         for hub in self.map_data.get("hubs", {}).values():
