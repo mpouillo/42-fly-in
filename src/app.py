@@ -101,7 +101,7 @@ class App():
 
             # Drone movement
             self.graph.reset()
-            if not any(drone.moving for drone in self.drones):
+            if not any(drone.moving for drone in self.drones) and any(drone.step < len(drone.path) for drone in self.drones):
                 if pr.is_key_down(pr.KEY_T) and any(drone.step != len(drone.path) - 1 for drone in self.drones):
                     self.turns += 1
                     for drone in self.drones:
