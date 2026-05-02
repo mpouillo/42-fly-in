@@ -11,7 +11,8 @@ class DroneAnim:
         self.model: pr.Model = pr.load_model("assets/drone.glb")
         self.anim_offset = pr.Vector3(0, 0, 0)
         self.speed = DRONE_SPEED
-        self.anim_step = random.randrange(0, 628) / 100
+        self.anim_step = 0
+        self.rand_y_offset = random.randrange(0, 628) / 100
 
     def render(self) -> None:
         """Draw Drone model at current position"""
@@ -26,9 +27,25 @@ class DroneAnim:
                          pr.WHITE)
 
     def animate(self):
-        # Update position depending on animation state
+        """Update position depending on animation state."""
         amplitude = 0.2
-        self.anim_offset.y = (1 + math.sin(self.anim_step)) * amplitude
+        self.anim_offset.y = (1 + math.sin(self.anim_step + self.rand_y_offset)) * amplitude
+
+        # Count drones on same hub
+        td = 0
+        for drone in self.app.drones:
+            if drone.path[self.step].name == self.path[self.step].name:
+                td += 1
+            if drone.id == self.id:
+                pos = td
+
+        # Animate position depending on how many drones are on the same hub
+        if td > 1:
+            self.anim_offset.x = math.cos(self.anim_step + (math.pi * 2 * pos / td)) * amplitude
+            self.anim_offset.z = math.sin(self.anim_step + (math.pi * 2 * pos / td)) * amplitude
+        else:
+            self.anim_offset.x = 0
+            self.anim_offset.z = 0
 
     def update(self):
         self.anim_step = (self.anim_step + pr.get_frame_time() * ANIM_SPEED) % (math.pi * 2)
@@ -77,7 +94,9 @@ class Drone(Entity, DroneAnim):
         prev_target = self.path[self.step]
         self.step = min(len(self.path) - 1, self.step + 1)
         self.target = self.path[self.step]
-        self.app.graph.drone_map[self.target.name]["drones"].append(self.id)
+        # Append drone id to hub if not at last hub
+        if not self.step == len(self.path) - 1:
+            self.app.graph.drone_map[self.target.name]["drones"].append(self.id)
         if prev_target.name != self.target.name:
             self.app.graph.drone_map[prev_target.name]["links"][self.target.name].append(self.id)
         self.moving = True

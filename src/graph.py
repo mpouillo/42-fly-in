@@ -84,13 +84,19 @@ class Graph(object):
 
         def add_edge(graph, a, b, weight):
             graph[a].append((b, weight))
-            graph[b].append((a, weight))
 
         # Create graph with index values instead of strings
         for name1, neighbor in self.weight_graph.items():
             for name2, weight in neighbor.items():
                 # Skip blocked hubs
-                if weight == float('inf'):
+                if (
+                    self.map_data["hubs"][name1]["zone"] == "blocked"
+                    or self.map_data["hubs"][name2]["zone"] == "blocked"
+                    or self.map_data["connections"][name1][name2] < 1
+                    or self.map_data["connections"][name2][name1] < 1
+                    or self.map_data["hubs"][name1]["max_drones"] < 1
+                    or self.map_data["hubs"][name2]["max_drones"] < 1
+                ):
                     continue
                 add_edge(graph, nodes.index(name1), nodes.index(name2), weight)
 
