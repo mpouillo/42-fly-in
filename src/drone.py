@@ -6,6 +6,7 @@ from src.entity import Entity
 
 ANIM_SPEED = 3
 
+
 class DroneAnim:
     def __init__(self):
         self.model: pr.Model = pr.load_model("assets/drone.glb")
@@ -29,7 +30,10 @@ class DroneAnim:
     def animate(self):
         """Update position depending on animation state."""
         amplitude = 0.2
-        self.anim_offset.y = (1 + math.sin(self.anim_step + self.rand_y_offset)) * amplitude
+        self.anim_offset.y = (
+            (1 + math.sin(self.anim_step + self.rand_y_offset))
+            * amplitude
+        )
 
         # Count drones on same hub
         td = 0
@@ -41,14 +45,23 @@ class DroneAnim:
 
         # Animate position depending on how many drones are on the same hub
         if td > 1:
-            self.anim_offset.x = math.cos(self.anim_step + (math.pi * 2 * pos / td)) * amplitude
-            self.anim_offset.z = math.sin(self.anim_step + (math.pi * 2 * pos / td)) * amplitude
+            self.anim_offset.x = (
+                math.cos(self.anim_step + (math.pi * 2 * pos / td))
+                * amplitude
+            )
+            self.anim_offset.z = (
+                math.sin(self.anim_step + (math.pi * 2 * pos / td))
+                * amplitude
+            )
         else:
             self.anim_offset.x = 0
             self.anim_offset.z = 0
 
     def update(self):
-        self.anim_step = (self.anim_step + pr.get_frame_time() * ANIM_SPEED) % (math.pi * 2)
+        self.anim_step = (
+            (self.anim_step + pr.get_frame_time() * ANIM_SPEED)
+            % (math.pi * 2)
+        )
         self.animate()
         self.render()
 
@@ -79,12 +92,21 @@ class Drone(Entity, DroneAnim):
             path_from_start = self.app.graph.dijkstra(start, end)
 
             # Append end on calls if already at end
-            if len(path_from_start) == 1 and path_from_start[0].name in [p.name for p in self.path]:
+            if (
+                len(path_from_start) == 1
+                and path_from_start[0].name in [p.name for p in self.path]
+            ):
                 self.path.extend(path_from_start)
                 return
 
-            # Append new path differently depending on if drone is on a restricted zone
-            if self.step > 0 and self.path[self.step].name == self.path[self.step - 1].name and self.app.graph.drone_map[self.path[self.step].name]["type"] == "restricted":
+            # Append new path differently depending on
+            # if drone is on a restricted zone
+            if (
+                self.step > 0
+                and self.path[self.step].name == self.path[self.step - 1].name
+                and self.app.graph.drone_map
+                    [self.path[self.step].name]["type"] == "restricted"
+            ):
                 self.path = self.path[:self.step] + path_from_start[1:]
             else:
                 self.path = self.path[:self.step] + path_from_start
@@ -96,9 +118,11 @@ class Drone(Entity, DroneAnim):
         self.target = self.path[self.step]
         # Append drone id to hub if not at last hub
         if not self.step == len(self.path) - 1:
-            self.app.graph.drone_map[self.target.name]["drones"].append(self.id)
+            (self.app.graph.drone_map[self.target.name]
+                ["drones"].append(self.id))
         if prev_target.name != self.target.name:
-            self.app.graph.drone_map[prev_target.name]["links"][self.target.name].append(self.id)
+            (self.app.graph.drone_map[prev_target.name]
+                ["links"][self.target.name].append(self.id))
         self.moving = True
 
     def go_prev(self):

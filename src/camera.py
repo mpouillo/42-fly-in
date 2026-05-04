@@ -8,6 +8,8 @@ class Camera(Player):
                  position: pr.Vector3,
                  direction: pr.Vector3,
                  orth_pos: pr.Vector2):
+        position = pr.vector3_normalize(position)
+        direction = pr.vector3_normalize(direction)
         super().__init__(position, direction)
 
         self.fovy = CAMERA_FOVY_PERSPECTIVE

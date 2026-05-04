@@ -84,7 +84,7 @@ class App():
 
     def run(self):
         camera = Camera(pr.Vector3(-1, 1, 0),
-                        pr.Vector3(0, 1, 1),
+                        pr.Vector3(1, 0, 0),
                         self.map_center)
         self.load_assets()
         self.load_drones()
@@ -101,12 +101,22 @@ class App():
 
             # Drone movement
             self.graph.reset()
-            if not any(drone.moving for drone in self.drones) and any(drone.step < len(drone.path) for drone in self.drones):
-                if pr.is_key_down(pr.KEY_T) and any(drone.step != len(drone.path) - 1 for drone in self.drones):
+            if (
+                not any(drone.moving for drone in self.drones)
+                and any(drone.step < len(drone.path) for drone in self.drones)
+            ):
+                if (
+                    pr.is_key_down(pr.KEY_T)
+                    and (any(drone.step != len(drone.path) - 1
+                         for drone in self.drones))
+                ):
                     self.turns += 1
                     for drone in self.drones:
                         drone.go_next()
-                if pr.is_key_down(pr.KEY_R) and any(drone.step != 0 for drone in self.drones):
+                if (
+                    pr.is_key_down(pr.KEY_R) and
+                    any(drone.step != 0 for drone in self.drones)
+                ):
                     self.turns = max(0, self.turns - 1)
                     for drone in self.drones:
                         drone.go_prev()
@@ -130,7 +140,10 @@ class App():
             # HUD display
             ft = pr.get_frame_time()
             if ft != 0:
-                pr.draw_text("FPS: " + str(round(1 / pr.get_frame_time())), 20, 20, 48, pr.WHITE)
+                pr.draw_text(
+                    "FPS: " + str(round(1 / pr.get_frame_time())),
+                    20, 20, 48, pr.WHITE
+                )
             pr.draw_text("TURN: " + str(self.turns), 20, 80, 48, pr.WHITE)
 
             pr.end_drawing()
@@ -181,7 +194,10 @@ class App():
             texture = pr.load_texture_from_image(img)
             plane = pr.load_model_from_mesh(pr.gen_mesh_plane(0.1, 0.1, 1, 1))
             plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
-            pr.draw_model(plane, pr.Vector3(hub["x"], 0.07, hub["y"]), 1, pr.WHITE)
+            pr.draw_model(plane, pr.Vector3(hub["x"],
+                          0.07, hub["y"]), 1, pr.WHITE)
+            pr.unload_model(plane)
+            pr.unload_texture(texture)
 
     def get_hub_color(self, hub_type: str):
         match hub_type:

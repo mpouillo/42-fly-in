@@ -9,7 +9,7 @@ class Player():
         self.direction = direction
 
         self.yaw = math.atan2(self.direction.x, self.direction.z)
-        self.pitch = math.radians(-45)
+        self.pitch = math.atan(self.direction.y)
 
         self.sensitivity = 0.001
         self.speed = MOVEMENT_SPEED

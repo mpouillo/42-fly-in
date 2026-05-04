@@ -50,11 +50,15 @@ class Graph(object):
         # Adds 1 weight if hub is full this turn
         if (
             len(self.drone_map[b]["drones"]) >= self.drone_map[b]["capacity"]
-            or len(self.drone_map[a]["links"][b]) >= self.map_data["connections"][a][b]
+            or len(self.drone_map[a]["links"][b])
+            >= self.map_data["connections"][a][b]
         ):
             return 1
         # Allows a free hub to be picked over an equally weighted occupied one
-        if (0 < len(self.drone_map[b]["drones"]) < self.drone_map[b]["capacity"]):
+        if (
+            0 < len(self.drone_map[b]["drones"])
+                < self.drone_map[b]["capacity"]
+        ):
             return 0.5
         return 0
 
@@ -115,10 +119,12 @@ class Graph(object):
             # Double restricted nodes in path
             if (self.drone_map[nodes[cur]]["type"] == "restricted"):
                 path.append(nodes[cur])
-            # Double nodes if blocked that turn (max_drones or max_link_capacity)
+            # x2 nodes if blocked that turn (max_drones or max_link_capacity)
             if (
-                len(self.drone_map[nodes[nex]]["drones"]) >= self.drone_map[nodes[nex]]["capacity"]
-                or len(self.drone_map[nodes[cur]]["links"][nodes[nex]]) >= self.map_data["connections"][nodes[cur]][nodes[nex]]
+                len(self.drone_map[nodes[nex]]["drones"])
+                >= self.drone_map[nodes[nex]]["capacity"]
+                or len(self.drone_map[nodes[cur]]["links"][nodes[nex]])
+                >= self.map_data["connections"][nodes[cur]][nodes[nex]]
             ):
                 path.append(nodes[cur])
 
