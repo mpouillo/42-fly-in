@@ -131,15 +131,26 @@ class Graph(object):
         if cur is None:
             path = [start]
 
+        path.reverse()
         # Convert path ton named tuples ("name": name, "position": (x, 1, y))
         Target = namedtuple("Target", ["name", "position"])
-        targets = [Target(
-                hub, pr.Vector3(self.map_data["hubs"][hub]["x"], 1,
-                                self.map_data["hubs"][hub]["y"])
-            ) for hub in path
-        ]
+        targets = []
+        for i, hub in enumerate(path):
+            if (
+                0 < i < len(path) - 1
+                and path[i] == path[i + 1]
+                and self.map_data["hubs"][path[i]]["zone"] == "restricted"
+            ):
+                x = (self.map_data["hubs"][path[i]]["x"]
+                     + self.map_data["hubs"][path[i - 1]]["x"]) / 2
+                z = (self.map_data["hubs"][path[i]]["y"]
+                     + self.map_data["hubs"][path[i - 1]]["y"]) / 2
+            else:
+                x = self.map_data["hubs"][hub]["x"]
+                z = self.map_data["hubs"][hub]["y"]
+            step = Target(hub, pr.Vector3(x, 1, z))
+            targets.append(step)
 
-        targets.reverse()
         return targets
 
     def reset(self) -> None:

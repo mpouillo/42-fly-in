@@ -83,6 +83,14 @@ class Drone(Entity, DroneAnim):
 
     def compute_path(self):
         # Update path, computing it with start at current drone position
+
+        # Return if at end node but not at end of path
+        if (
+            self.step < len(self.path) - 1
+            and self.path[self.step].name == self.path[-1].name
+        ):
+            return
+
         start = self.app.get_start_hub_name()
         end = self.app.get_end_hub_name()
         if not self.path:
@@ -94,7 +102,7 @@ class Drone(Entity, DroneAnim):
             # Append end on calls if already at end
             if (
                 len(path_from_start) == 1
-                and path_from_start[0].name in [p.name for p in self.path]
+                and path_from_start[0].name == self.path[-1].name
             ):
                 self.path.extend(path_from_start)
                 return
@@ -108,6 +116,8 @@ class Drone(Entity, DroneAnim):
                     [self.path[self.step].name]["type"] == "restricted"
             ):
                 self.path = self.path[:self.step] + path_from_start[1:]
+            elif self.path[self.step].name == self.path[-1].name:
+                return
             else:
                 self.path = self.path[:self.step] + path_from_start
 
@@ -117,9 +127,10 @@ class Drone(Entity, DroneAnim):
         self.step = min(len(self.path) - 1, self.step + 1)
         self.target = self.path[self.step]
         # Append drone id to hub if not at last hub
-        if not self.step == len(self.path) - 1:
+        if not self.target.name == self.path[-1].name:
             (self.app.graph.drone_map[self.target.name]
                 ["drones"].append(self.id))
+        # Append drone to connection if moving to a diff hub
         if prev_target.name != self.target.name:
             (self.app.graph.drone_map[prev_target.name]
                 ["links"][self.target.name].append(self.id))

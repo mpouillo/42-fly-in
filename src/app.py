@@ -48,10 +48,16 @@ class App():
         return None
 
     def init_window(self) -> None:
-        screen_width = 1920
-        screen_height = 1080
         pr.set_trace_log_level(pr.LOG_ERROR)    # Silence info logs
-        pr.init_window(screen_width, screen_height, "Fly-in")
+        pr.init_window(1280, 720, "Fly-in")
+        monitor = pr.get_current_monitor()
+        monitor_width = pr.get_monitor_width(monitor)
+        monitor_height = pr.get_monitor_height(monitor)
+        width = monitor_width // 3 * 2
+        height = monitor_height // 3 * 2
+        pr.set_window_size(width, height)
+        pr.set_window_position((monitor_width - width) // 2,
+                               (monitor_height - height) // 2)
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
 
@@ -101,18 +107,16 @@ class App():
 
             # Drone movement
             self.graph.reset()
-            if (
-                not any(drone.moving for drone in self.drones)
-                and any(drone.step < len(drone.path) for drone in self.drones)
-            ):
+            if not any(drone.moving for drone in self.drones):
                 if (
                     pr.is_key_down(pr.KEY_T)
-                    and (any(drone.step != len(drone.path) - 1
+                    and (any(drone.step < len(drone.path) - 1
                          for drone in self.drones))
                 ):
                     self.turns += 1
                     for drone in self.drones:
                         drone.go_next()
+                    self.print_drone_info(self.drones)
                 if (
                     pr.is_key_down(pr.KEY_R) and
                     any(drone.step != 0 for drone in self.drones)
@@ -120,6 +124,7 @@ class App():
                     self.turns = max(0, self.turns - 1)
                     for drone in self.drones:
                         drone.go_prev()
+                    self.print_drone_info(self.drones, True)
 
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
@@ -154,6 +159,18 @@ class App():
             drone.unload()
 
         pr.close_window()
+
+    def print_drone_info(self, drones: List[Drone], reverse=False) -> None:
+        prev = 1
+        for drone in drones:
+            if reverse:
+                prev = -1
+            if (
+                drone.path[drone.step].name
+                != drone.path[drone.step - prev].name
+            ):
+                print(f"D{drone.id}-{drone.target.name} ", end="", flush=True)
+        print()
 
     def draw_connections(self):
         for hub1, neighbors in self.map_data["connections"].items():
