@@ -49,4 +49,4 @@ class Player():
         ny += speed * upward
         nz += speed * (cos_yaw * forward + sin_yaw * sideward)
 
-        self.position.x, self.position.y, self.position.z = nx, ny, nz
+        self.position.x, self.position.y, self.position.z = nx, max(1, ny), nz
