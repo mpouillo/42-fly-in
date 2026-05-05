@@ -22,14 +22,15 @@ class Player():
         self.pitch = max(-1.57, min(1.57, self.pitch
                                     - mouse_delta.y * self.sensitivity))
 
-        if pr.is_key_down(pr.KEY_RIGHT):
-            self.yaw -= 0.07
-        if pr.is_key_down(pr.KEY_LEFT):
-            self.yaw += 0.07
-        if pr.is_key_down(pr.KEY_DOWN):
-            self.pitch = max(math.radians(-90), self.pitch - 0.07)
-        if pr.is_key_down(pr.KEY_UP):
-            self.pitch = min(math.radians(90), self.pitch + 0.07)
+        """Settings for keyboard-based camera movement"""
+        # if pr.is_key_down(pr.KEY_RIGHT):
+        #     self.yaw -= 0.07
+        # if pr.is_key_down(pr.KEY_LEFT):
+        #     self.yaw += 0.07
+        # if pr.is_key_down(pr.KEY_DOWN):
+        #     self.pitch = max(math.radians(-90), self.pitch - 0.07)
+        # if pr.is_key_down(pr.KEY_UP):
+        #     self.pitch = min(math.radians(90), self.pitch + 0.07)
 
         sin_yaw, cos_yaw = math.sin(self.yaw), math.cos(self.yaw)
         self.direction.x = math.cos(self.pitch) * sin_yaw

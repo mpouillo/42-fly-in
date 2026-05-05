@@ -53,11 +53,11 @@ class App():
         monitor = pr.get_current_monitor()
         monitor_width = pr.get_monitor_width(monitor)
         monitor_height = pr.get_monitor_height(monitor)
-        width = monitor_width // 3 * 2
-        height = monitor_height // 3 * 2
-        pr.set_window_size(width, height)
-        pr.set_window_position((monitor_width - width) // 2,
-                               (monitor_height - height) // 2)
+        self.width = monitor_width // 3 * 2
+        self.height = monitor_height // 3 * 2
+        pr.set_window_size(self.width, self.height)
+        pr.set_window_position((monitor_width - self.width) // 2,
+                               (monitor_height - self.height) // 2)
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
 
@@ -116,31 +116,244 @@ class App():
         return assets
 
     def load_drones(self):
+        drones = []
         for i in range(self.map_data["nb_drones"]):
-            self.drones.append(Drone(self, i))
+            drones.append(Drone(self, i))
+        return drones
+
+    def draw_connections(self):
+        for hub1, neighbors in self.map_data["connections"].items():
+            # Draw lines
+            for hub2, max_link_capacity in neighbors.items():
+                connection_name = f"{hub1}-{hub2}"
+                start_x = self.map_data["hubs"][hub1]["x"]
+                start_y = self.map_data["hubs"][hub1]["y"]
+                end_x = self.map_data["hubs"][hub2]["x"]
+                end_y = self.map_data["hubs"][hub2]["y"]
+                pr.draw_line_3d((start_x, 0.01, start_y),
+                                (end_x, 0.01, end_y), CONNECTION_COLOR)
+                # Max_link_capacity
+                pr.draw_model(self.assets.get(connection_name, "model"),
+                              pr.Vector3((end_x + start_x) / 2, 0.02,
+                                         (end_y + start_y) / 2), 1, pr.WHITE)
+
+    def get_hub_color(self, hub_type: str):
+        match hub_type:
+            case "normal":
+                return pr.GREEN
+            case "blocked":
+                return pr.BLACK
+            case "restricted":
+                return pr.RED
+            case "priority":
+                return pr.YELLOW
+            case _:
+                return pr.RAYWHITE
+
+    def draw_hubs(self):
+        for hub, data in self.map_data["hubs"].items():
+            if self.color_toggle:
+                color = self.get_hub_color(data["zone"])
+            else:
+                color = COLOR_MAP[data["color"]]
+
+            pr.draw_cylinder((data["x"], 0, data["y"]), NODE_SIZE,
+                             NODE_SIZE, 0.05, 32, color)
+            # Max_drones
+            pr.draw_model(self.assets.get(hub, "model"),
+                          (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE)
+
+    def print_drone_info(self, drones: List[Drone], reverse=False) -> None:
+        print(f"Turn {self.turns}:")
+        for drone in drones:
+            if (
+                drone.path[drone.step].name
+                != drone.path[drone.step - 1].name
+                and self.map_data["hubs"][drone.path[drone.step].name]
+                ["zone"] == "restricted"
+            ):
+                print(f"D{drone.id + 1}-{drone.path[drone.step - 1].name}-"
+                      f"{drone.path[drone.step].name} ", end="", flush=True)
+
+            elif (
+                drone.path[drone.step].name
+                != drone.path[drone.step - 1].name
+                or self.map_data["hubs"][drone.path[drone.step].name]
+                ["zone"] == "restricted"
+            ):
+                print(f"D{drone.id + 1}-{drone.target.name} ",
+                      end="", flush=True)
+        print()
+
+    def draw_hud(self):
+        margin = 40
+        position = pr.Vector2(margin, margin)
+        ratio = 25
+        font_size = min(self.width // ratio, self.height // ratio)
+        font = self.assets.get("arial", "font")
+
+        # FPS
+        frame_time = pr.get_frame_time()
+        if frame_time > 0:
+            text = "FPS: " + str(round(1 / frame_time))
+            pr.draw_text_ex(font, text, position, font_size, 0, pr.WHITE)
+
+        # Turns
+        position.y += font_size + margin // 2
+        text = "Turn: " + str(self.turns)
+        pr.draw_text_ex(font, text, position, font_size, 0, pr.WHITE)
+
+        # Rectangle data
+        rect_size = font_size * 1.5
+        rect_weight = 5
+
+        # Next/Prev
+        position = pr.Vector2(margin, (self.height - rect_size - margin) // 2)
+        rectangle = pr.Rectangle(position.x, position.y, rect_size, rect_size)
+        text = "Next turn"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + rect_size + margin // 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        poly_pos = pr.Vector2(rectangle.x + rect_size / 2,
+                              rectangle.y + rect_size / 2)
+        if pr.is_key_down(pr.KEY_RIGHT):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_poly(poly_pos, 3, rect_size / 3, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_poly(poly_pos, 3, rect_size / 3, 0, pr.WHITE)
+        pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        position = pr.Vector2(margin, (self.height + rect_size + margin) // 2)
+        rectangle = pr.Rectangle(position.x, position.y, rect_size, rect_size)
+        text = "Prev turn"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + rect_size + margin // 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        poly_pos = pr.Vector2(rectangle.x + rect_size / 2,
+                              rectangle.y + rect_size / 2)
+        if pr.is_key_down(pr.KEY_LEFT):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_poly(poly_pos, 3, rect_size / 3, 180, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_poly(poly_pos, 3, rect_size / 3, 180, pr.WHITE)
+        pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        # Camera
+        position = pr.Vector2(self.width - margin, self.height - margin)
+        rectangle = pr.Rectangle(position.x - rect_size,
+                                 position.y - rect_size,
+                                 rect_size, rect_size)
+        text = "Toggle 2D view"
+        key = "Q"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        key_size = pr.measure_text_ex(font, key, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x - margin // 2 - text_size.x,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        key_pos = pr.Vector2(rectangle.x + (rect_size - key_size.x) / 2,
+                             rectangle.y + (rect_size - key_size.y) / 2)
+        if pr.is_key_down(pr.KEY_Q):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, key, key_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, key, key_pos, font_size, 0, pr.WHITE)
+        pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        # Colors
+        position.y -= rect_size + margin // 2
+        rectangle = pr.Rectangle(position.x - rect_size,
+                                 position.y - rect_size,
+                                 rect_size, rect_size)
+        text = "Toggle colors"
+        key = "E"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        key_size = pr.measure_text_ex(font, key, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x - margin // 2 - text_size.x,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        key_pos = pr.Vector2(rectangle.x + (rect_size - key_size.x) / 2,
+                             rectangle.y + (rect_size - key_size.y) / 2)
+        if pr.is_key_down(pr.KEY_E):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, key, key_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, key, key_pos, font_size, 0, pr.WHITE)
+        pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        # Controls
+        position = pr.Vector2(margin, self.height - margin - rect_size)
+        rectangle = pr.Rectangle(position.x, position.y, rect_size, rect_size)
+
+        text = "A"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + (rect_size - text_size.x) / 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        if pr.is_key_down(pr.KEY_A):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        rectangle.x += rect_size + position.x // 2
+        text = "S"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + (rect_size - text_size.x) / 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        if pr.is_key_down(pr.KEY_S):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        rectangle.x += rect_size + position.x // 2
+        text = "D"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + (rect_size - text_size.x) / 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        if pr.is_key_down(pr.KEY_D):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
+
+        rectangle.x -= rect_size + position.x // 2
+        rectangle.y -= rect_size + position.x // 2
+        text = "W"
+        text_size = pr.measure_text_ex(font, text, font_size, 0)
+        text_pos = pr.Vector2(rectangle.x + (rect_size - text_size.x) / 2,
+                              rectangle.y + (rect_size - text_size.y) / 2)
+        if pr.is_key_down(pr.KEY_W):
+            pr.draw_rectangle_rec(rectangle, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.BLACK)
+        else:
+            pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
+            pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
 
     def run(self):
-        camera = Camera(pr.Vector3(-1, 1, 0),
-                        pr.Vector3(1, 0, 0),
-                        self.map_center)
+        camera = Camera((-1, 1, 0), (1, 0, 0), self.map_center)
         self.assets = self.load_assets()
-        self.load_drones()
+        self.drones = self.load_drones()
 
         while not pr.window_should_close():
             # Camera
-            if pr.is_key_pressed(pr.KEY_U):
+            if pr.is_key_pressed(pr.KEY_Q):
                 camera.toggle_perspective()
             camera.update()
 
             # Toggle better colors
-            if pr.is_key_pressed(pr.KEY_L):
+            if pr.is_key_pressed(pr.KEY_E):
                 self.color_toggle = not self.color_toggle
 
             # Drone movement
             self.graph.reset()
             if not any(drone.moving for drone in self.drones):
                 if (
-                    pr.is_key_down(pr.KEY_T)
+                    pr.is_key_down(pr.KEY_RIGHT)
                     and (any(drone.step < len(drone.path) - 1
                          for drone in self.drones))
                 ):
@@ -149,7 +362,7 @@ class App():
                         drone.go_next()
                     self.print_drone_info(self.drones)
                 if (
-                    pr.is_key_down(pr.KEY_R) and
+                    pr.is_key_down(pr.KEY_LEFT) and
                     any(drone.step != 0 for drone in self.drones)
                 ):
                     self.turns = max(0, self.turns - 1)
@@ -173,16 +386,7 @@ class App():
                 drone.update()
 
             pr.end_mode_3d()
-
-            # HUD display
-            ft = pr.get_frame_time()
-            if ft != 0:
-                pr.draw_text(
-                    "FPS: " + str(round(1 / pr.get_frame_time())),
-                    20, 20, 48, pr.WHITE
-                )
-            pr.draw_text("TURN: " + str(self.turns), 20, 80, 48, pr.WHITE)
-
+            self.draw_hud()
             pr.end_drawing()
 
         # Cleanup
@@ -191,67 +395,3 @@ class App():
             drone.unload()
 
         pr.close_window()
-
-    def print_drone_info(self, drones: List[Drone], reverse=False) -> None:
-        for drone in drones:
-            if (
-                drone.path[drone.step].name
-                != drone.path[drone.step - 1].name
-                and self.map_data["hubs"][drone.path[drone.step].name]
-                ["zone"] == "restricted"
-            ):
-                print(f"D{drone.id + 1}-{drone.path[drone.step - 1].name}-"
-                      f"{drone.path[drone.step].name} ", end="", flush=True)
-
-            elif (
-                drone.path[drone.step].name
-                != drone.path[drone.step - 1].name
-                or self.map_data["hubs"][drone.path[drone.step].name]
-                ["zone"] == "restricted"
-            ):
-                print(f"D{drone.id + 1}-{drone.target.name} ",
-                      end="", flush=True)
-
-        print()
-
-    def draw_connections(self):
-        for hub1, neighbors in self.map_data["connections"].items():
-            # Draw lines
-            for hub2, max_link_capacity in neighbors.items():
-                connection_name = f"{hub1}-{hub2}"
-                start_x = self.map_data["hubs"][hub1]["x"]
-                start_y = self.map_data["hubs"][hub1]["y"]
-                end_x = self.map_data["hubs"][hub2]["x"]
-                end_y = self.map_data["hubs"][hub2]["y"]
-                pr.draw_line_3d((start_x, 0.01, start_y),
-                                (end_x, 0.01, end_y), CONNECTION_COLOR)
-                # Max_link_capacity
-                pr.draw_model(self.assets.get(connection_name, "model"),
-                              pr.Vector3((end_x + start_x) / 2, 0.02,
-                                         (end_y + start_y) / 2), 1, pr.WHITE)
-
-    def draw_hubs(self):
-        for hub, data in self.map_data["hubs"].items():
-            if self.color_toggle:
-                color = self.get_hub_color(data["zone"])
-            else:
-                color = COLOR_MAP[data["color"]]
-
-            pr.draw_cylinder((data["x"], 0, data["y"]), NODE_SIZE,
-                             NODE_SIZE, 0.05, 32, color)
-            # Max_drones
-            pr.draw_model(self.assets.get(hub, "model"),
-                          (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE)
-
-    def get_hub_color(self, hub_type: str):
-        match hub_type:
-            case "normal":
-                return pr.GREEN
-            case "blocked":
-                return pr.BLACK
-            case "restricted":
-                return pr.RED
-            case "priority":
-                return pr.YELLOW
-            case _:
-                return pr.RAYWHITE

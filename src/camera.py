@@ -5,11 +5,11 @@ from src.constants import CAMERA_FOVY_PERSPECTIVE, CAMERA_FOVY_ORTHOGRAPHIC
 
 class Camera(Player):
     def __init__(self,
-                 position: pr.Vector3,
-                 direction: pr.Vector3,
+                 position: tuple[float, float, float],
+                 direction: tuple[float, float, float],
                  orth_pos: pr.Vector2):
-        position = pr.vector3_normalize(position)
-        direction = pr.vector3_normalize(direction)
+        position = pr.vector3_normalize(pr.Vector3(*position))
+        direction = pr.vector3_normalize(pr.Vector3(*direction))
         super().__init__(position, direction)
 
         self.fovy = CAMERA_FOVY_PERSPECTIVE
