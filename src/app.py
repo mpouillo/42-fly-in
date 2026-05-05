@@ -77,7 +77,7 @@ class App():
         assets.add("ground", "model", model)
 
         # Font
-        font = pr.load_font("assets/arial.ttf")
+        font = pr.load_font("assets/superstar_memesbruh03.ttf")
         assets.add("arial", "font", font)
 
         text, img, texture, mesh, model = None, None, None, None, None
@@ -167,7 +167,8 @@ class App():
         print(f"Turn {self.turns}:")
         for drone in drones:
             if (
-                drone.path[drone.step].name
+                drone.step > 0
+                and drone.path[drone.step].name
                 != drone.path[drone.step - 1].name
                 and self.map_data["hubs"][drone.path[drone.step].name]
                 ["zone"] == "restricted"
@@ -176,7 +177,8 @@ class App():
                       f"{drone.path[drone.step].name} ", end="", flush=True)
 
             elif (
-                drone.path[drone.step].name
+                drone.step > 0
+                and drone.path[drone.step].name
                 != drone.path[drone.step - 1].name
                 or self.map_data["hubs"][drone.path[drone.step].name]
                 ["zone"] == "restricted"
@@ -204,8 +206,8 @@ class App():
         pr.draw_text_ex(font, text, position, font_size, 0, pr.WHITE)
 
         # Rectangle data
-        rect_size = font_size * 1.5
-        rect_weight = 5
+        rect_size = font_size * 2
+        rect_weight = 10
 
         # Next/Prev
         position = pr.Vector2(margin, (self.height - rect_size - margin) // 2)
@@ -245,7 +247,7 @@ class App():
         rectangle = pr.Rectangle(position.x - rect_size,
                                  position.y - rect_size,
                                  rect_size, rect_size)
-        text = "Toggle 2D view"
+        text = "Toggle view"
         key = "Q"
         text_size = pr.measure_text_ex(font, text, font_size, 0)
         key_size = pr.measure_text_ex(font, key, font_size, 0)
