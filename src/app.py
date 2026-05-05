@@ -1,7 +1,7 @@
 import pyray as pr
-from typing import List, Any
-from collections import namedtuple
+from typing import List
 from src.graph import Graph
+from src.assets import Assets
 from src.drone import Drone
 from src.camera import Camera
 from src.constants import (
@@ -61,28 +61,59 @@ class App():
         pr.set_target_fps(TARGET_FPS)
         pr.rl_set_line_width(LINE_WIDTH)
 
-    def load_assets(self) -> List[Any]:
+    def load_assets(self) -> Assets:
         """Loads and returns a list of assets"""
-        Asset = namedtuple("Asset", ["model", "texture", "pos", "scale"])
+        assets = Assets()
 
         # Ground plane
-        texture = pr.load_texture_from_image(
-            pr.load_image("assets/ground.jpg"))
-        plane = pr.load_model_from_mesh(
-            pr.gen_mesh_plane(self.map_size.x, self.map_size.y, 1, 1))
-        plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
-        self.assets.append(Asset(
-            plane,
-            texture,
-            pr.Vector3(self.map_center.x, 0, self.map_center.y),
-            1
-        ))
+        img = pr.load_image("assets/ground.jpg")
+        assets.add("ground", "image", img)
+        texture = pr.load_texture_from_image(img)
+        assets.add("ground", "texture", texture)
+        mesh = pr.gen_mesh_plane(self.map_size.x, self.map_size.y, 1, 1)
+        assets.add("ground", "mesh", mesh)
+        model = pr.load_model_from_mesh(mesh)
+        model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
+        assets.add("ground", "model", model)
 
-    def unload_assets(self, assets: List[Any]):
-        for asset in self.assets:
-            pr.unload_texture(asset.texture)
-            pr.unload_model(asset.model)
-        self.assets.clear()
+        # Font
+        font = pr.load_font("assets/arial.ttf")
+        assets.add("arial", "font", font)
+
+        text, img, texture, mesh, model = None, None, None, None, None
+
+        # Connections max_link_capacity
+        for hub1, neighbors in self.map_data["connections"].items():
+            for hub2, max_link_capacity in neighbors.items():
+                connection_name = f"{hub1}-{hub2}"
+                text = str(max_link_capacity)
+                img = pr.image_text_ex(font, text, 96, 0, pr.RAYWHITE)
+                assets.add(connection_name, "image", img)
+                texture = pr.load_texture_from_image(img)
+                assets.add(connection_name, "texture", texture)
+                mesh = pr.gen_mesh_plane(0.1 * len(text) / 2, 0.1, 1, 1)
+                assets.add(connection_name, "mesh", mesh)
+                model = pr.load_model_from_mesh(mesh)
+                model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE]\
+                    .texture = texture
+                assets.add(connection_name, "model", model)
+
+        text, img, texture, mesh, model = None, None, None, None, None
+
+        # Hubs max_drones
+        for hub, data in self.map_data["hubs"].items():
+            text = str(data["max_drones"])
+            img = pr.image_text_ex(font, text, 96, 0, pr.RAYWHITE)
+            assets.add(hub, "image", img)
+            texture = pr.load_texture_from_image(img)
+            assets.add(hub, "texture", texture)
+            mesh = pr.gen_mesh_plane(0.2 * len(text) / 2, 0.2, 1, 1)
+            assets.add(hub, "mesh", mesh)
+            model = pr.load_model_from_mesh(mesh)
+            model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
+            assets.add(hub, "model", model)
+
+        return assets
 
     def load_drones(self):
         for i in range(self.map_data["nb_drones"]):
@@ -92,7 +123,7 @@ class App():
         camera = Camera(pr.Vector3(-1, 1, 0),
                         pr.Vector3(1, 0, 0),
                         self.map_center)
-        self.load_assets()
+        self.assets = self.load_assets()
         self.load_drones()
 
         while not pr.window_should_close():
@@ -131,8 +162,9 @@ class App():
             pr.begin_mode_3d(camera.camera)
 
             #   Map rendering
-            for asset in self.assets:
-                pr.draw_model(asset.model, asset.pos, asset.scale, pr.WHITE)
+            ground = self.assets.get("ground", "model")
+            pr.draw_model(ground, pr.Vector3(self.map_center.x, 0,
+                          self.map_center.y), 1, pr.WHITE)
             self.draw_connections()
             self.draw_hubs()
 
@@ -154,67 +186,61 @@ class App():
             pr.end_drawing()
 
         # Cleanup
-        self.unload_assets(self.assets)
+        self.assets.clear()
         for drone in self.drones:
             drone.unload()
 
         pr.close_window()
 
     def print_drone_info(self, drones: List[Drone], reverse=False) -> None:
-        prev = 1
         for drone in drones:
-            if reverse:
-                prev = -1
             if (
                 drone.path[drone.step].name
-                != drone.path[drone.step - prev].name
+                != drone.path[drone.step - 1].name
+                and self.map_data["hubs"][drone.path[drone.step].name]
+                ["zone"] == "restricted"
+            ):
+                print(f"D{drone.id}-{drone.path[drone.step - 1].name}-"
+                      f"{drone.path[drone.step].name} ", end="", flush=True)
+
+            elif (
+                drone.path[drone.step].name
+                != drone.path[drone.step - 1].name
+                or self.map_data["hubs"][drone.path[drone.step].name]
+                ["zone"] == "restricted"
             ):
                 print(f"D{drone.id}-{drone.target.name} ", end="", flush=True)
+
         print()
 
     def draw_connections(self):
         for hub1, neighbors in self.map_data["connections"].items():
             # Draw lines
             for hub2, max_link_capacity in neighbors.items():
+                connection_name = f"{hub1}-{hub2}"
                 start_x = self.map_data["hubs"][hub1]["x"]
                 start_y = self.map_data["hubs"][hub1]["y"]
                 end_x = self.map_data["hubs"][hub2]["x"]
                 end_y = self.map_data["hubs"][hub2]["y"]
                 pr.draw_line_3d((start_x, 0.01, start_y),
                                 (end_x, 0.01, end_y), CONNECTION_COLOR)
-
-            # Draw max_link_capacity values
-            img = pr.image_text(str(max_link_capacity), 1, pr.RAYWHITE)
-            texture = pr.load_texture_from_image(img)
-            plane = pr.load_model_from_mesh(pr.gen_mesh_plane(0.1, 0.1, 1, 1))
-            plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
-            pr.draw_model(
-                plane,
-                pr.Vector3((end_x + start_x) / 2, 0.02, (end_y + start_y) / 2),
-                1,
-                pr.WHITE
-            )
-            pr.unload_model(plane)
-            pr.unload_texture(texture)
+                # Max_link_capacity
+                pr.draw_model(self.assets.get(connection_name, "model"),
+                              pr.Vector3((end_x + start_x) / 2, 0.02,
+                                         (end_y + start_y) / 2), 1, pr.WHITE)
 
     def draw_hubs(self):
-        for hub in self.map_data.get("hubs", {}).values():
+        for hub, data in self.map_data["hubs"].items():
             if self.color_toggle:
-                color = self.get_hub_color(hub["zone"])
+                color = self.get_hub_color(data["zone"])
             else:
-                color = COLOR_MAP[hub["color"]]
-            pr.draw_cylinder((hub["x"], 0, hub["y"]), NODE_SIZE,
-                             NODE_SIZE, 0.05, 32, color)
+                color = COLOR_MAP[data["color"]]
 
-            # Draw max drones values
-            img = pr.image_text(str(hub["max_drones"]), 1, pr.RAYWHITE)
-            texture = pr.load_texture_from_image(img)
-            plane = pr.load_model_from_mesh(pr.gen_mesh_plane(0.1, 0.1, 1, 1))
-            plane.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
-            pr.draw_model(plane, pr.Vector3(hub["x"],
-                          0.07, hub["y"]), 1, pr.WHITE)
-            pr.unload_model(plane)
-            pr.unload_texture(texture)
+            pr.draw_cylinder((data["x"], 0, data["y"]), NODE_SIZE,
+                             NODE_SIZE, 0.05, 32, color)
+            # Max_drones
+            pr.draw_model(self.assets.get(hub, "model"),
+                          (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE)
 
     def get_hub_color(self, hub_type: str):
         match hub_type:

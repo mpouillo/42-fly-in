@@ -14,7 +14,7 @@ class Graph(object):
 
         self.init_graph()
         self.init_drone_data()
-        self.nodes = list(self.weight_graph.keys())
+        self.hubs = list(self.weight_graph.keys())
 
     def __str__(self):
         return f"{self.__class__.__name__} ({dict(self.weight_graph)})"
@@ -46,7 +46,8 @@ class Graph(object):
                 self.drone_map[hub1]["links"][hub2] = []
 
     def blocked_this_turn(self, a, b) -> float:
-        a, b = self.nodes[a], self.nodes[b]
+        a, b = self.hubs[a], self.hubs[b]
+
         # Adds 1 weight if hub is full this turn
         if (
             len(self.drone_map[b]["drones"]) >= self.drone_map[b]["capacity"]
@@ -54,16 +55,18 @@ class Graph(object):
             >= self.map_data["connections"][a][b]
         ):
             return 1
+
         # Allows a free hub to be picked over an equally weighted occupied one
         if (
             0 < len(self.drone_map[b]["drones"])
                 < self.drone_map[b]["capacity"]
         ):
             return 0.5
+
         return 0
 
     def dijkstra(self, start, end):
-        nodes = self.nodes
+        nodes = self.hubs
         graph = [[] for _ in range(len(nodes))]
         prev = [None] * len(nodes)
 

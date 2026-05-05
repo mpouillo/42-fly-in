@@ -1,10 +1,8 @@
 import math
 import random
 import pyray as pr
-from src.constants import DRONE_SPEED
+from src.constants import DRONE_SPEED, ANIM_SPEED
 from src.entity import Entity
-
-ANIM_SPEED = 3
 
 
 class DroneAnim:
@@ -119,7 +117,7 @@ class Drone(Entity, DroneAnim):
             elif self.path[self.step].name == self.path[-1].name:
                 return
             else:
-                self.path = self.path[:self.step] + path_from_start
+                self.path = self.path[:self.step + 1] + path_from_start[1:]
 
     def go_next(self):
         self.compute_path()

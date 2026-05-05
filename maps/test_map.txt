@@ -7,5 +7,5 @@ hub: waypoint2 2 0 [color=blue max_drones=10]
 end_hub: goal 3 0 [color=red max_drones=3]
 
 connection: start-waypoint1 [max_link_capacity=10]
-connection: waypoint1-waypoint2 [max_link_capacity=10]
+connection: waypoint1-waypoint2 [max_link_capacity=5]
 connection: waypoint2-goal [max_link_capacity=10]
