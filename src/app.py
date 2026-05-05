@@ -200,7 +200,7 @@ class App():
                 and self.map_data["hubs"][drone.path[drone.step].name]
                 ["zone"] == "restricted"
             ):
-                print(f"D{drone.id}-{drone.path[drone.step - 1].name}-"
+                print(f"D{drone.id + 1}-{drone.path[drone.step - 1].name}-"
                       f"{drone.path[drone.step].name} ", end="", flush=True)
 
             elif (
@@ -209,7 +209,8 @@ class App():
                 or self.map_data["hubs"][drone.path[drone.step].name]
                 ["zone"] == "restricted"
             ):
-                print(f"D{drone.id}-{drone.target.name} ", end="", flush=True)
+                print(f"D{drone.id + 1}-{drone.target.name} ",
+                      end="", flush=True)
 
         print()
 
