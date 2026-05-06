@@ -7,7 +7,7 @@ class Camera(Player):
     def __init__(self,
                  position: tuple[float, float, float],
                  direction: tuple[float, float, float],
-                 orth_pos: pr.Vector2):
+                 orth_pos: pr.Vector2) -> None:
         position = pr.vector3_normalize(pr.Vector3(*position))
         direction = pr.vector3_normalize(pr.Vector3(*direction))
         super().__init__(position, direction)
@@ -25,7 +25,7 @@ class Camera(Player):
         self.saved_fovy = CAMERA_FOVY_ORTHOGRAPHIC
         self.orth_pos = orth_pos
 
-    def toggle_perspective(self):
+    def toggle_perspective(self) -> None:
         if self.perspective == pr.CAMERA_PERSPECTIVE:
             self.perspective = pr.CAMERA_ORTHOGRAPHIC
             self.fovy = self.saved_fovy
@@ -42,7 +42,7 @@ class Camera(Player):
             self.direction = self.saved_direction
             self.camera.up = pr.Vector3(0, 1, 0)
 
-    def update(self):
+    def update(self) -> None:
         if not self.perspective == pr.CAMERA_ORTHOGRAPHIC:
             self.controls()
         else:

@@ -1,25 +1,29 @@
 from collections import defaultdict, namedtuple
 import heapq
 import pyray as pr
+from typing import Any, Dict, List
+
+Target = namedtuple("Target", ["name", "position"])
 
 
 class Graph(object):
     """ Graph data structure, undirected by default. """
 
-    def __init__(self, app):
-        self.app = app
-        self.map_data = self.app.map_data
-        self.weight_graph = defaultdict(dict)
-        self.drone_map = defaultdict(dict)
+    def __init__(self, app: Any) -> None:
+        self.app: Any = app
+        self.map_data: Dict[str, Any] = self.app.map_data
+        self.weight_graph: Dict[str, Any] = defaultdict(dict)
+        self.drone_map: Dict[str, Any] = defaultdict(dict)
 
         self.init_graph()
         self.init_drone_data()
-        self.hubs = list(self.weight_graph.keys())
+        self.hubs: List[str] = list(self.weight_graph.keys())
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.__class__.__name__} ({dict(self.weight_graph)})"
 
-    def init_graph(self):
+    def init_graph(self) -> None:
+        weight: float = 0
         for hub1, neighbors in self.map_data["connections"].items():
             for hub2, max_link_capacity in neighbors.items():
                 hub2_data = self.map_data["hubs"][hub2]
@@ -33,7 +37,7 @@ class Graph(object):
                 self.weight_graph[hub1][hub2] = weight
                 self.weight_graph[hub2][hub1] = weight
 
-    def init_drone_data(self):
+    def init_drone_data(self) -> None:
         for name, data in self.map_data["hubs"].items():
             self.drone_map[name] = {
                 "capacity": data["max_drones"],
@@ -45,34 +49,36 @@ class Graph(object):
             for hub2 in neighbors.keys():
                 self.drone_map[hub1]["links"][hub2] = []
 
-    def blocked_this_turn(self, a, b) -> float:
-        a, b = self.hubs[a], self.hubs[b]
+    def blocked_this_turn(self, a: int, b: int) -> float:
+        hub1: str = self.hubs[a]
+        hub2: str = self.hubs[b]
 
         # Adds 1 weight if hub is full this turn
         if (
-            len(self.drone_map[b]["drones"]) >= self.drone_map[b]["capacity"]
-            or len(self.drone_map[a]["links"][b])
-            >= self.map_data["connections"][a][b]
+            len(self.drone_map[hub2]["drones"])
+            >= self.drone_map[hub2]["capacity"]
+            or len(self.drone_map[hub1]["links"][hub2])
+            >= self.map_data["connections"][hub1][hub2]
         ):
             return 1
 
         # Allows a free hub to be picked over an equally weighted occupied one
         if (
-            0 < len(self.drone_map[b]["drones"])
-                < self.drone_map[b]["capacity"]
+            0 < len(self.drone_map[hub2]["drones"])
+                < self.drone_map[hub2]["capacity"]
         ):
             return 0.5
 
         return 0
 
-    def dijkstra(self, start, end):
-        nodes = self.hubs
-        graph = [[] for _ in range(len(nodes))]
-        prev = [None] * len(nodes)
+    def dijkstra(self, start: str, end: str) -> List[Target]:
+        nodes: List[str] = self.hubs
+        graph: List[Any] = [[] for _ in range(len(nodes))]
+        prev: List[None] = [None] * len(nodes)
 
-        def shortest_path(graph, start):
-            pq = []
-            dist = [float('inf')] * len(graph)
+        def shortest_path(graph: List[Any], start: int) -> List[Any]:
+            pq: List[Any] = []
+            dist: List[float] = [float('inf')] * len(graph)
 
             heapq.heappush(pq, (0, start))
             dist[start] = 0
@@ -89,7 +95,7 @@ class Graph(object):
                         heapq.heappush(pq, (dist[b], b))
             return (prev)
 
-        def add_edge(graph, a, b, weight):
+        def add_edge(graph: List[Any], a: int, b: int, weight: int) -> None:
             graph[a].append((b, weight))
 
         # Create graph with index values instead of strings
@@ -111,8 +117,9 @@ class Graph(object):
         prev = shortest_path(graph, nodes.index(start))
 
         # Iterate from end to start and convert indexes to strings
-        path = [end]
-        cur = nodes.index(end)
+        path: List[str] = [end]
+        cur: Any = nodes.index(end)
+        nex: Any = None
         while cur != nodes.index(start):
             nex = cur
             cur = prev[cur]
@@ -136,8 +143,7 @@ class Graph(object):
 
         path.reverse()
         # Convert path ton named tuples ("name": name, "position": (x, 1, y))
-        Target = namedtuple("Target", ["name", "position"])
-        targets = []
+        targets: List[Target] = []
         for i, hub in enumerate(path):
             if (
                 0 < i < len(path) - 1

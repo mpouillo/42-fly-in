@@ -4,20 +4,22 @@ from src.constants import MOVEMENT_SPEED
 
 
 class Player():
-    def __init__(self, position, direction):
-        self.position = position
-        self.direction = direction
+    def __init__(self,
+                 position: pr.Vector2,
+                 direction: pr.Vector2):
+        self.position: pr.Vector2 = position
+        self.direction: pr.Vector2 = direction
 
-        self.yaw = math.atan2(self.direction.x, self.direction.z)
-        self.pitch = math.atan(self.direction.y)
+        self.yaw: float = math.atan2(self.direction.x, self.direction.z)
+        self.pitch: float = math.atan(self.direction.y)
 
-        self.sensitivity = 0.001
-        self.speed = MOVEMENT_SPEED
+        self.sensitivity: float = 0.001
+        self.speed: float = MOVEMENT_SPEED
         pr.disable_cursor()
 
-    def controls(self):
-        speed = pr.get_frame_time() * self.speed
-        mouse_delta = pr.get_mouse_delta()
+    def controls(self) -> None:
+        speed: float = pr.get_frame_time() * self.speed
+        mouse_delta: pr.Vector2 = pr.get_mouse_delta()
         self.yaw -= mouse_delta.x * self.sensitivity
         self.pitch = max(-1.57, min(1.57, self.pitch
                                     - mouse_delta.y * self.sensitivity))
@@ -32,19 +34,22 @@ class Player():
         # if pr.is_key_down(pr.KEY_UP):
         #     self.pitch = min(math.radians(90), self.pitch + 0.07)
 
-        sin_yaw, cos_yaw = math.sin(self.yaw), math.cos(self.yaw)
+        sin_yaw: float = math.sin(self.yaw)
+        cos_yaw: float = math.cos(self.yaw)
         self.direction.x = math.cos(self.pitch) * sin_yaw
         self.direction.y = math.sin(self.pitch)
         self.direction.z = math.cos(self.pitch) * cos_yaw
 
-        forward = pr.is_key_down(pr.KEY_W) - pr.is_key_down(pr.KEY_S)
-        sideward = pr.is_key_down(pr.KEY_D) - pr.is_key_down(pr.KEY_A)
-        upward = pr.is_key_down(pr.KEY_SPACE) - pr.is_key_down(pr.KEY_C)
+        forward: int = pr.is_key_down(pr.KEY_W) - pr.is_key_down(pr.KEY_S)
+        sideward: int = pr.is_key_down(pr.KEY_D) - pr.is_key_down(pr.KEY_A)
+        upward: int = pr.is_key_down(pr.KEY_SPACE) - pr.is_key_down(pr.KEY_C)
 
         if forward != 0 and sideward != 0:
             speed *= 0.707
 
-        nx, ny, nz = self.position.x, self.position.y, self.position.z
+        nx: float = self.position.x
+        ny: float = self.position.y
+        nz: float = self.position.z
 
         nx += speed * (sin_yaw * forward - cos_yaw * sideward)
         ny += speed * upward

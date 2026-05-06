@@ -1,5 +1,5 @@
 import pyray as pr
-from typing import List
+from typing import Any, Dict, List
 from src.graph import Graph
 from src.assets import Assets
 from src.drone import Drone
@@ -14,15 +14,13 @@ from src.constants import (
 
 
 class App():
-    def __init__(self, map_data):
-        self.map_data = map_data
-        self.graph = Graph(self)
+    def __init__(self, map_data: Dict[Any, Any]) -> None:
+        self.map_data: Dict[str, Any] = map_data
+        self.graph: Graph = Graph(self)
 
         self.compute_map_dimensions()
-        self.color_toggle = False
-        self.turns = 0
-        self.drones = []
-        self.assets = []
+        self.color_toggle: bool = False
+        self.turns: int = 0
 
     def compute_map_dimensions(self) -> None:
         s_x = min(self.map_data["hubs"].values(), key=lambda hub: hub["x"])
@@ -30,18 +28,18 @@ class App():
         b_x = max(self.map_data["hubs"].values(), key=lambda hub: hub["x"])
         b_y = max(self.map_data["hubs"].values(), key=lambda hub: hub["y"])
 
-        self.map_size = pr.Vector2(
+        self.map_size: pr.Vector2 = pr.Vector2(
             b_x["x"] - s_x["x"] + 1, b_y["y"] - s_y["y"] + 1)
-        self.map_center = pr.Vector2(
+        self.map_center: pr.Vector2 = pr.Vector2(
             (b_x["x"] + s_x["x"]) / 2, (b_y["y"] + s_y["y"]) / 2)
 
-    def get_start_hub_name(self):
+    def get_start_hub_name(self) -> Any:
         for name, hub in self.map_data["hubs"].items():
             if hub["hub_type"] == "start_hub":
                 return name
         return None
 
-    def get_end_hub_name(self):
+    def get_end_hub_name(self) -> Any:
         for name, hub in self.map_data["hubs"].items():
             if hub["hub_type"] == "end_hub":
                 return name
@@ -115,13 +113,13 @@ class App():
 
         return assets
 
-    def load_drones(self):
-        drones = []
+    def load_drones(self) -> List[Drone]:
+        drones: List[Drone] = []
         for i in range(self.map_data["nb_drones"]):
             drones.append(Drone(self, i))
         return drones
 
-    def draw_connections(self):
+    def draw_connections(self) -> None:
         for hub1, neighbors in self.map_data["connections"].items():
             # Draw lines
             for hub2, max_link_capacity in neighbors.items():
@@ -137,7 +135,7 @@ class App():
                               pr.Vector3((end_x + start_x) / 2, 0.02,
                                          (end_y + start_y) / 2), 1, pr.WHITE)
 
-    def get_hub_color(self, hub_type: str):
+    def get_hub_color(self, hub_type: str) -> pr.Color:
         match hub_type:
             case "normal":
                 return pr.GREEN
@@ -150,7 +148,7 @@ class App():
             case _:
                 return pr.RAYWHITE
 
-    def draw_hubs(self):
+    def draw_hubs(self) -> None:
         for hub, data in self.map_data["hubs"].items():
             if self.color_toggle:
                 color = self.get_hub_color(data["zone"])
@@ -163,7 +161,9 @@ class App():
             pr.draw_model(self.assets.get(hub, "model"),
                           (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE)
 
-    def print_drone_info(self, drones: List[Drone], reverse=False) -> None:
+    def print_drone_info(self,
+                         drones: List[Drone],
+                         reverse: bool = False) -> None:
         print(f"Turn {self.turns}:")
         for drone in drones:
             if (
@@ -187,7 +187,7 @@ class App():
                       end="", flush=True)
         print()
 
-    def draw_hud(self):
+    def draw_hud(self) -> None:
         margin = 40
         position = pr.Vector2(margin, margin)
         ratio = 25
@@ -336,7 +336,7 @@ class App():
             pr.draw_rectangle_lines_ex(rectangle, rect_weight, pr.WHITE)
             pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
 
-    def run(self):
+    def run(self) -> None:
         camera = Camera((-1, 1, 0), (1, 0, 0), self.map_center)
         self.assets = self.load_assets()
         self.drones = self.load_drones()

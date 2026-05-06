@@ -10,8 +10,8 @@ def main() -> None:
     args = parse_args()
     try:
         map_data = parse_map(args.map_file)
-    except ValueError as e:
-        sys.exit(e)
+    except Exception as e:
+        sys.exit(str(e))
     app = App(map_data)
     app.init_window()
     app.run()
