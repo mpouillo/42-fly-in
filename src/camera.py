@@ -8,9 +8,8 @@ class Camera(Player):
                  position: tuple[float, float, float],
                  direction: tuple[float, float, float],
                  orth_pos: pr.Vector2) -> None:
-        position = pr.vector3_normalize(pr.Vector3(*position))
-        direction = pr.vector3_normalize(pr.Vector3(*direction))
-        super().__init__(position, direction)
+        super().__init__(pr.Vector3(*position),
+                         pr.Vector3(*direction))
 
         self.fovy = CAMERA_FOVY_PERSPECTIVE
         self.perspective = pr.CAMERA_PERSPECTIVE

@@ -5,10 +5,10 @@ from src.constants import MOVEMENT_SPEED
 
 class Player():
     def __init__(self,
-                 position: pr.Vector2,
-                 direction: pr.Vector2):
-        self.position: pr.Vector2 = position
-        self.direction: pr.Vector2 = direction
+                 position: pr.Vector3,
+                 direction: pr.Vector3):
+        self.position: pr.Vector3 = position
+        self.direction: pr.Vector3 = direction
 
         self.yaw: float = math.atan2(self.direction.x, self.direction.z)
         self.pitch: float = math.atan(self.direction.y)
