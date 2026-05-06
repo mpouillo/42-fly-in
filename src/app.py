@@ -100,7 +100,7 @@ class App():
 
         return assets
 
-    def generate_hub_values(self):
+    def generate_hub_values(self) -> None:
         assets = self.assets
         font = assets.get("arial", "font")
         # Hubs max_drones
