@@ -179,9 +179,6 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str, i: int) -> None:
         )
     map_dict["hubs"][name]["y"] = int(y)
 
-    if key in ["start_hub", "end_hub"]:
-        map_dict["hubs"][name]["max_drones"] = float('inf')
-
     # Metadata is optional and enclosed in brackets
     if not metadata:
         return
