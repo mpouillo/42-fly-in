@@ -142,7 +142,7 @@ class Graph(object):
             path = [start]
 
         path.reverse()
-        # Convert path ton named tuples ("name": name, "position": (x, 1, y))
+        # Convert path to named tuples ("name": name, "position": (x, 1, y))
         targets: List[Target] = []
         for i, hub in enumerate(path):
             if (
