@@ -98,10 +98,23 @@ class App():
 
         text, img, texture, mesh, model = None, None, None, None, None
 
+        return assets
+
+    def generate_hub_values(self):
+        assets = self.assets
+        font = assets.get("arial", "font")
         # Hubs max_drones
         for hub, data in self.map_data["hubs"].items():
+            assets.unload(hub)
+            assets.remove(hub)
+            if self.color_toggle:
+                color = self.get_hub_color(data["zone"])
+            else:
+                color = COLOR_MAP[data["color"]]
             text = str(data["max_drones"])
-            img = pr.image_text_ex(font, text, 96, 0, pr.RAYWHITE)
+            img = pr.image_text_ex(font, text, 96, 0, pr.WHITE)
+            pr.image_alpha_clear(img, color, 0.1)
+            pr.image_color_brightness(img, 10)
             assets.add(hub, "image", img)
             texture = pr.load_texture_from_image(img)
             assets.add(hub, "texture", texture)
@@ -110,8 +123,6 @@ class App():
             model = pr.load_model_from_mesh(mesh)
             model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE].texture = texture
             assets.add(hub, "model", model)
-
-        return assets
 
     def load_drones(self) -> List[Drone]:
         drones: List[Drone] = []
@@ -372,6 +383,7 @@ class App():
                         drone.go_prev()
                     self.print_drone_info(self.drones, True)
 
+            self.generate_hub_values()
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera.camera)
