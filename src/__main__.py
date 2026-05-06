@@ -1,18 +1,25 @@
 #!/usr/bin/env python3
 
-# import os
-# import sys
+import os
+import sys
 from src.parser import parse_args, parse_map
 from src.app import App
 
 
 def main() -> None:
     args = parse_args()
-    map_data = parse_map(args.map_file)
+    try:
+        map_data = parse_map(args.map_file)
+    except ValueError as e:
+        sys.exit(e)
     app = App(map_data)
     app.init_window()
     app.run()
 
 
 if __name__ == "__main__":
-    main()  # Don't forget to try except before pushing
+    try:
+        main()
+    except BaseException as e:
+        print("An error occurred:", e)
+        os._exit(1)
