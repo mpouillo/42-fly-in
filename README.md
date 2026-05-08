@@ -137,14 +137,12 @@ To remove any temporary files (`__pycache__` or `.mypy_cache`), run:
 
 ```shell
 $> make clean
-# Cleaning cache files...
 ```
 
 To clean up installed environment files, run:
 
 ```shell
 $> make fclean
-# Removing Miniconda directory...
 ```
 
 ## Resources
