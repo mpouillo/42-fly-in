@@ -67,7 +67,7 @@ class Graph(object):
             0 < len(self.drone_map[hub2]["drones"])
                 < self.drone_map[hub2]["capacity"]
         ):
-            return 0.5
+            return 0.001
 
         return 0
 
