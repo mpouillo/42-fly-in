@@ -115,11 +115,11 @@ Features include:
 
 #### Screenshots
 
-- 2D View
 <div align=center><img alt="screenshot 2d" src="assets/screenshot_2d.png" style="max-height: 400"></div>
+<p align=center><i>3D view: maps/easy/02_simple_fork.txt</i></p>
 
-- 3D View
 <div align=center><img alt="screenshot 3d" src="assets/screenshot_3d.png" style="max-height: 400"></div>
+<p align=center><i>2D view: maps/easy/02_simple_fork.txt</i></p>
 
 ## Instructions
 
