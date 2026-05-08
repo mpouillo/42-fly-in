@@ -1,11 +1,36 @@
 # Easy Level 1: Simple linear path
-nb_drones: 30
+nb_drones: 20
 
-start_hub: start 0 0 [color=green max_drones=10]
-hub: waypoint1 1 0 [color=blue max_drones=10]
-hub: waypoint2 2 0 [color=blue max_drones=10]
-end_hub: goal 3 0 [color=red max_drones=3]
+start_hub: start 0 0 [color=green]
 
-connection: start-waypoint1 [max_link_capacity=10]
-connection: waypoint1-waypoint2 [max_link_capacity=5]
-connection: waypoint2-goal [max_link_capacity=10]
+hub: junction1 1 0 [color=blue max_drones=5]
+
+hub: restricted1 2 -1 [color=orange max_drones=5 zone=restricted]
+hub: blocked1 2 0 [color=black max_drones=5 zone=blocked]
+hub: normal1 2 1 [max_drones=5]
+
+hub: junction2 3 0 [color=blue max_drones=5]
+
+hub: normal2 4 -1 [max_drones=5]
+hub: priority1 4 0 [color=yellow zone=priority max_drones=2]
+hub: normal3 4 1 [max_drones=0]
+
+end_hub: goal 5 0 [color=red max_drones=1]
+
+connection: start-junction1 [max_link_capacity=10]
+
+connection: junction1-normal1 [max_link_capacity=10]
+connection: junction1-blocked1 [max_link_capacity=10]
+connection: junction1-restricted1 [max_link_capacity=10]
+
+connection: normal1-junction2 [max_link_capacity=3]
+connection: blocked1-junction2 [max_link_capacity=10]
+connection: restricted1-junction2 [max_link_capacity=10]
+
+connection: junction2-normal2 [max_link_capacity=10]
+connection: junction2-priority1 [max_link_capacity=10]
+connection: junction2-normal3 [max_link_capacity=10]
+
+connection: normal2-goal [max_link_capacity=10]
+connection: priority1-goal [max_link_capacity=10]
+connection: normal3-goal [max_link_capacity=10]
