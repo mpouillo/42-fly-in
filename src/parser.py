@@ -50,6 +50,8 @@ def parse_map(filepath: str) -> Dict[str, Any]:
         if line.startswith("#") or not line.strip():
             continue
 
+        line = line.split("#", 1)[0].strip()
+
         if ':' not in line:
             raise ParsingError("missing ':' separator", i)
 
@@ -107,6 +109,8 @@ def parse_map(filepath: str) -> Dict[str, Any]:
         # Skip comments or empty lines
         if line.startswith("#") or not line.strip():
             continue
+
+        line = line.split("#", 1)[0].strip()
 
         if ':' not in line:
             raise ParsingError(f"missing ':' separator at line {i + 1}", i)
@@ -214,11 +218,14 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str, i: int) -> None:
                     raise ParsingError(
                         f"duplicate 'color' metadata for '{name}'", i
                     )
-                if not val.isalpha() or val not in ALLOWED_COLORS:
+                if not val.isalpha():
                     raise ParsingError(
                         f"invalid 'color' metadata for '{name}'", i
                     )
-                map_dict["hubs"][name]["color"] = val
+                if val in ALLOWED_COLORS:
+                    map_dict["hubs"][name]["color"] = val
+                else:
+                    map_dict["hubs"][name]["color"] = "blue"
             case "max_drones":
                 if flag_max_drones:
                     raise ParsingError(
@@ -268,6 +275,7 @@ def parse_connection(map_dict: Dict[str, Any], value: str, i: int) -> None:
 
     # Validate metadata
     if not (metadata.startswith('[') and metadata.endswith(']')):
+        print(metadata)
         raise ParsingError("metadata must be enclosed in brackets", i)
 
     md_values = [v.strip() for v in metadata[1:-1].split()]

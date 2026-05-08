@@ -9,7 +9,7 @@ hub: restricted1 2 -1 [color=orange max_drones=5 zone=restricted]
 hub: blocked1 2 0 [color=black max_drones=5 zone=blocked]
 hub: normal1 2 1 [max_drones=5]
 
-hub: junction2 3 0 [color=blue max_drones=5]
+hub: junction2 3 0 [color=lkfdhgkjdhighf max_drones=5]
 
 hub: normal2 4 -1 [max_drones=5]
 hub: priority1 4 0 [color=yellow zone=priority max_drones=2]
