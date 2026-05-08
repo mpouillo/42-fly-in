@@ -348,7 +348,7 @@ class App():
             pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
 
     def run(self) -> None:
-        camera = Camera((-1, 1, 0), (0, -1, 0), self.map_center)
+        camera = Camera((-1, 2, 0), (0, -1, 0), self.map_center)
         self.assets = self.load_assets()
         self.drones = self.load_drones()
 
