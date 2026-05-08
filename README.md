@@ -112,6 +112,7 @@ Features include:
 | E             | Toggle colors (map data <-> zone type)|
 | Left Arrow    | Play previous turn                    |
 | Right Arrow   | Play next turn                        |
+| Escape        | Exit the program                      |
 
 #### Screenshots
 
@@ -133,7 +134,7 @@ Or, alternatively (provided `uv` is installed):
 $> uv run python -m src <path_to_map_file>
 ```
 
-To remove any temporary files (`__pycache__` or `.mypy_cache`), run:
+To remove any temporary files (e.g., `__pycache__` or `.mypy_cache`), run:
 
 ```shell
 $> make clean
