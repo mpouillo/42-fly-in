@@ -6,11 +6,14 @@ from src.constants import ALLOWED_COLORS, ALLOWED_ZONES
 
 
 class ParsingError(Exception):
+    """Custom error class for parsing errors."""
     def __init__(self, message: str, line: int) -> None:
+        """Initialize parent Exception class with a custom message."""
         super().__init__(f"{message} (line {line})")
 
 
 def parse_args() -> argparse.Namespace:
+    """Parse and return command line arguments."""
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
@@ -22,6 +25,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def parse_map(filepath: str) -> Dict[str, Any]:
+    """Parse file pointed to by filename for map data"""
     file: Path = Path(filepath)
     if not bool(file.is_file):
         raise ValueError("'map' argument is not a file")
@@ -133,7 +137,6 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str, i: int) -> None:
     Parse hub values and store them in map_dict.
     Raise ParsingError if any value is invalid.
     """
-
     values = [v.strip() for v in value.split(' ', 3)]
     if len(values) < 3:
         raise ParsingError("missing arguments for hub value", i)
@@ -232,6 +235,10 @@ def parse_hub(map_dict: Dict[str, Any], key: str, value: str, i: int) -> None:
 
 
 def parse_connection(map_dict: Dict[str, Any], value: str, i: int) -> None:
+    """
+    Parse connection values and store them in map_dict.
+    Raise ParsingError if any value is invalid.
+    """
     values = [v.strip() for v in value.split(' ', 1)]
     if len(values) == 0:
         raise ParsingError("connection value cannot be empty", i)

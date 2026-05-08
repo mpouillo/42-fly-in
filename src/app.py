@@ -14,7 +14,14 @@ from src.constants import (
 
 
 class App():
+    """
+    Instantiate an application window.
+
+    Keyword arguments:
+    map_data -- dictionnary parsed from input map file
+    """
     def __init__(self, map_data: Dict[Any, Any]) -> None:
+        """Initialize required variables for program execution."""
         self.map_data: Dict[str, Any] = map_data
         self.graph: Graph = Graph(self)
 
@@ -23,6 +30,7 @@ class App():
         self.turns: int = 0
 
     def compute_map_dimensions(self) -> None:
+        """Compute the dimensions of the map for use in other calculations."""
         s_x = min(self.map_data["hubs"].values(), key=lambda hub: hub["x"])
         s_y = min(self.map_data["hubs"].values(), key=lambda hub: hub["y"])
         b_x = max(self.map_data["hubs"].values(), key=lambda hub: hub["x"])
@@ -34,18 +42,21 @@ class App():
             (b_x["x"] + s_x["x"]) / 2, (b_y["y"] + s_y["y"]) / 2)
 
     def get_start_hub_name(self) -> Any:
+        """Return the name of the start hub."""
         for name, hub in self.map_data["hubs"].items():
             if hub["hub_type"] == "start_hub":
                 return name
         return None
 
     def get_end_hub_name(self) -> Any:
+        """Return the name of the end hub."""
         for name, hub in self.map_data["hubs"].items():
             if hub["hub_type"] == "end_hub":
                 return name
         return None
 
     def init_window(self) -> None:
+        """Set required values to initialize raylib window."""
         pr.set_trace_log_level(pr.LOG_ERROR)    # Silence info logs
         pr.init_window(1280, 720, "Fly-in")
         monitor = pr.get_current_monitor()
@@ -60,7 +71,7 @@ class App():
         pr.rl_set_line_width(LINE_WIDTH)
 
     def load_assets(self) -> Assets:
-        """Loads and returns a list of assets"""
+        """Load and return a list of assets."""
         assets = Assets()
 
         # Ground plane
@@ -101,6 +112,7 @@ class App():
         return assets
 
     def generate_hub_values(self) -> None:
+        """Unload existing and regenerate hub max_drones model assets."""
         assets = self.assets
         font = assets.get("arial", "font")
         # Hubs max_drones
@@ -125,12 +137,14 @@ class App():
             assets.add(hub, "model", model)
 
     def load_drones(self) -> List[Drone]:
+        """Instantiate drones and return them as a list."""
         drones: List[Drone] = []
         for i in range(self.map_data["nb_drones"]):
             drones.append(Drone(self, i))
         return drones
 
     def draw_connections(self) -> None:
+        """Draw all connections between hubs to the raylib window."""
         for hub1, neighbors in self.map_data["connections"].items():
             # Draw lines
             for hub2, max_link_capacity in neighbors.items():
@@ -147,19 +161,21 @@ class App():
                                          (end_y + start_y) / 2), 1, pr.WHITE)
 
     def get_hub_color(self, hub_type: str) -> pr.Color:
+        """Return hub colors depending on hub type."""
         match hub_type:
             case "normal":
-                return pr.GREEN
+                return pr.BLUE
             case "blocked":
                 return pr.BLACK
             case "restricted":
-                return pr.RED
+                return pr.ORANGE
             case "priority":
                 return pr.YELLOW
             case _:
                 return pr.RAYWHITE
 
     def draw_hubs(self) -> None:
+        """Draw all hubs to the raylib window."""
         for hub, data in self.map_data["hubs"].items():
             if self.color_toggle:
                 color = self.get_hub_color(data["zone"])
@@ -175,6 +191,7 @@ class App():
     def print_drone_info(self,
                          drones: List[Drone],
                          reverse: bool = False) -> None:
+        """Print drone movements (D<id><hub/connection>) to the terminal."""
         print(f"Turn {self.turns}:")
         for drone in drones:
             if (
@@ -199,6 +216,7 @@ class App():
         print()
 
     def draw_hud(self) -> None:
+        """Draw info to raylib window about keys and program status."""
         margin = 40
         position = pr.Vector2(margin, margin)
         ratio = 25
@@ -348,6 +366,7 @@ class App():
             pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
 
     def run(self) -> None:
+        """Run the simulation."""
         camera = Camera((-1, 2, 0), (0, -1, 0), self.map_center)
         self.assets = self.load_assets()
         self.drones = self.load_drones()

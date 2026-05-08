@@ -7,7 +7,15 @@ from typing import List, Any
 
 
 class Drone(Entity):
+    """
+    Drone entity object.
+
+    Keyword arguments:
+    app -- the parent application
+    drone_id -- unique identifier for the drone
+    """
     def __init__(self, app: Any, drone_id: int) -> None:
+        """Initialize parent class anad required variables."""
         super().__init__()
         self.app: Any = app
         self.id: int = drone_id
@@ -27,7 +35,7 @@ class Drone(Entity):
         self.move(self.path[0].position, True)
 
     def compute_path(self) -> None:
-        # Update path, computing it with start at current drone position
+        """Update drone path from current drone position"""
 
         # Return if at end node but not at end of path
         if (
@@ -67,6 +75,7 @@ class Drone(Entity):
                 self.path = self.path[:self.step + 1] + path_from_start[1:]
 
     def go_next(self) -> None:
+        """Advance one turn."""
         self.compute_path()
         prev_target: Any = self.path[self.step]
         self.step = min(len(self.path) - 1, self.step + 1)
@@ -82,11 +91,13 @@ class Drone(Entity):
         self.moving = True
 
     def go_prev(self) -> None:
+        """Go back one turn."""
         self.step = max(0, self.step - 1)
         self.target = self.path[self.step]
         self.moving = True
 
     def move(self, position: pr.Vector3, instant: bool = False) -> None:
+        """Move to current target."""
         if not position:
             return
         if instant:
@@ -95,6 +106,7 @@ class Drone(Entity):
             super().move(position)
 
     def unload(self) -> None:
+        """Unload inner model data."""
         pr.unload_model(self.model)
 
     def animate(self) -> None:
@@ -128,7 +140,7 @@ class Drone(Entity):
             self.anim_offset.z = 0
 
     def render(self) -> None:
-        """Draw Drone model at current position"""
+        """Draw drone model at current position"""
         rotation_axis: pr.Vector3 = pr.Vector3(0, 1, 0)
         rotation_angle: float = math.degrees(self.yaw) - 90
         pos: pr.Vector3 = pr.vector3_add(self.position, self.anim_offset)
@@ -140,6 +152,7 @@ class Drone(Entity):
                          pr.WHITE)
 
     def update(self) -> None:
+        """Update drone position and draw to raylib window."""
         if self.moving and self.target:
             self.move(self.target.position)
             if self.position == self.target.position:

@@ -4,10 +4,19 @@ from src.constants import CAMERA_FOVY_PERSPECTIVE, CAMERA_FOVY_ORTHOGRAPHIC
 
 
 class Camera(Player):
+    """
+    Camera class to manage raylib camera and player movement.
+
+    Keyword arguments:
+    position -- starting position of the camera
+    direction -- starting direction of the camera
+    orth_pos -- position when switching to orthographic (2D) view
+    """
     def __init__(self,
                  position: tuple[float, float, float],
                  direction: tuple[float, float, float],
                  orth_pos: pr.Vector2) -> None:
+        """Initialize Player and current classes with default values."""
         super().__init__(pr.Vector3(*position),
                          pr.Vector3(*direction))
 
@@ -25,6 +34,7 @@ class Camera(Player):
         self.orth_pos = orth_pos
 
     def toggle_perspective(self) -> None:
+        """Switch between 2D (orthographic) and 3D (perspective) views."""
         if self.perspective == pr.CAMERA_PERSPECTIVE:
             self.perspective = pr.CAMERA_ORTHOGRAPHIC
             self.fovy = self.saved_fovy
@@ -42,6 +52,7 @@ class Camera(Player):
             self.camera.up = pr.Vector3(0, 1, 0)
 
     def update(self) -> None:
+        """Update camera position."""
         if not self.perspective == pr.CAMERA_ORTHOGRAPHIC:
             self.controls()
         else:

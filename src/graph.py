@@ -7,9 +7,15 @@ Target = namedtuple("Target", ["name", "position"])
 
 
 class Graph(object):
-    """ Graph data structure, undirected by default. """
+    """
+    Graph data structure, undirected by default.
+
+    Keyword arguments:
+    app -- the parent application
+    """
 
     def __init__(self, app: Any) -> None:
+        """Initialize required default values."""
         self.app: Any = app
         self.map_data: Dict[str, Any] = self.app.map_data
         self.weight_graph: Dict[str, Any] = defaultdict(dict)
@@ -20,9 +26,11 @@ class Graph(object):
         self.hubs: List[str] = list(self.weight_graph.keys())
 
     def __str__(self) -> str:
+        """Return a view of the internal weighted graph."""
         return f"{self.__class__.__name__} ({dict(self.weight_graph)})"
 
     def init_graph(self) -> None:
+        """Initialize weight_graph from map_data values."""
         weight: float = 0
         for hub1, neighbors in self.map_data["connections"].items():
             for hub2, max_link_capacity in neighbors.items():
@@ -38,6 +46,7 @@ class Graph(object):
                 self.weight_graph[hub2][hub1] = weight
 
     def init_drone_data(self) -> None:
+        """Initialize drone_map from map_data values."""
         for name, data in self.map_data["hubs"].items():
             self.drone_map[name] = {
                 "capacity": data["max_drones"],
@@ -50,6 +59,7 @@ class Graph(object):
                 self.drone_map[hub1]["links"][hub2] = []
 
     def blocked_this_turn(self, a: int, b: int) -> float:
+        """Return additional weight if drone is blocked this turn."""
         hub1: str = self.hubs[a]
         hub2: str = self.hubs[b]
 
@@ -72,11 +82,13 @@ class Graph(object):
         return 0
 
     def dijkstra(self, start: str, end: str) -> List[Target]:
+        """Compute and return shortest path from start to end hubs."""
         nodes: List[str] = self.hubs
         graph: List[Any] = [[] for _ in range(len(nodes))]
         prev: List[None] = [None] * len(nodes)
 
         def shortest_path(graph: List[Any], start: int) -> List[Any]:
+            """Return a list of shortest previous hub for each hub."""
             pq: List[Any] = []
             dist: List[float] = [float('inf')] * len(graph)
 
@@ -96,6 +108,7 @@ class Graph(object):
             return (prev)
 
         def add_edge(graph: List[Any], a: int, b: int, weight: int) -> None:
+            """Add an edge to a graph."""
             graph[a].append((b, weight))
 
         # Create graph with index values instead of strings
@@ -163,6 +176,7 @@ class Graph(object):
         return targets
 
     def reset(self) -> None:
+        """Reset values for drone_map."""
         for hub, data in self.drone_map.items():
             self.drone_map[hub]["drones"] = []
             for link in data["links"]:

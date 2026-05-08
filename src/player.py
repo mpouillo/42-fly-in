@@ -1,23 +1,31 @@
 import math
 import pyray as pr
-from src.constants import MOVEMENT_SPEED
+from src.constants import MOVEMENT_SPEED, CURSOR_SENSITIVITY
 
 
 class Player():
+    """Utility class for player movement.
+
+        Keyword arguments:
+            position -- starting position
+            direction -- starting direction
+        """
     def __init__(self,
                  position: pr.Vector3,
                  direction: pr.Vector3):
+        """Initialize starting player values."""
         self.position: pr.Vector3 = position
         self.direction: pr.Vector3 = direction
 
         self.yaw: float = math.atan2(self.direction.x, self.direction.z)
         self.pitch: float = math.atan(self.direction.y)
 
-        self.sensitivity: float = 0.001
+        self.sensitivity: float = CURSOR_SENSITIVITY
         self.speed: float = MOVEMENT_SPEED
         pr.disable_cursor()
 
     def controls(self) -> None:
+        """Get pressed keys and player values (position/direction)."""
         speed: float = pr.get_frame_time() * self.speed
         mouse_delta: pr.Vector2 = pr.get_mouse_delta()
         self.yaw -= mouse_delta.x * self.sensitivity

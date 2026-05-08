@@ -3,6 +3,8 @@ import pyray as pr
 
 
 class Entity:
+    """Basic Entity class, with default starting position."""
+
     def __init__(self) -> None:
         self.position: pr.Vector3 = pr.Vector3(0, 0, 0)
         self.direction: pr.Vector3 = pr.Vector3(0, 0, 0)
@@ -11,6 +13,7 @@ class Entity:
         self.speed: float = 1
 
     def set_direction(self, new_direction: pr.Vector3) -> None:
+        """Set or update direction variable to new_direction."""
         self.yaw = math.atan2(new_direction.x, new_direction.z)
         ground_dist: float = math.sqrt(
             new_direction.x ** 2 + new_direction.z ** 2
@@ -21,7 +24,7 @@ class Entity:
         self.direction.z = math.cos(self.pitch) * math.cos(self.yaw)
 
     def move(self, target: pr.Vector3) -> None:
-        """Updates position each frame, related to speed."""
+        """Update position each frame, relative to speed and fps."""
         diff: pr.Vector3 = pr.Vector3(target.x - self.position.x,
                                       target.y - self.position.y,
                                       target.z - self.position.z)
