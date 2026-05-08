@@ -110,7 +110,7 @@ class App():
     def generate_hub_values(self) -> None:
         """Unload existing and regenerate hub max_drones model assets."""
         assets = self.assets
-        color: pr.Color | tuple = (0, 0, 0, 0)
+        color: pr.Color | tuple[int, int, int, int] = (0, 0, 0, 0)
         font = assets.get("arial", "font")
         # Hubs max_drones
         for hub, data in self.map_data["hubs"].items():
