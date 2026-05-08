@@ -40,8 +40,12 @@ lint-strict:
 	@$(UV) run mypy $(SRC) --strict
 
 clean:
-	@echo "Cleaning cache files..."
-	@$(RM) -r */.mypy_cache */.pytest_cache */.uv_cache */__pycache__
+	@if [ -n "$$(find . -type d \( -name ".mypy_cache" -o -name "__pycache__" \
+	-o -name ".uv_cache" -o -name ".pytest_cache" \) -print -quit)" ]; then \
+		echo "Cleaning cache files..."; \
+		find . -type d \( -name ".mypy_cache" -o -name "__pycache__" -o -name \
+		".uv_cache" -o -name ".pytest_cache" \) -exec rm -rf {} +; \
+	fi
 
 fclean: clean
 	@echo "Removing virtual environment..."
