@@ -20,18 +20,17 @@ class Camera(Player):
         super().__init__(pr.Vector3(*position),
                          pr.Vector3(*direction))
 
-        self.fovy = CAMERA_FOVY_PERSPECTIVE
-        self.perspective = pr.CAMERA_PERSPECTIVE
+        self.fovy: float = CAMERA_FOVY_PERSPECTIVE
+        self.perspective: int = pr.CAMERA_PERSPECTIVE
         target = pr.vector3_add(self.position, self.direction)
-        self.camera = pr.Camera3D(self.position,
-                                  target,
-                                  (0, 1, 0),
-                                  self.fovy,
-                                  self.perspective)
-        self.saved_position = None
-        self.saved_direction = None
-        self.saved_fovy = CAMERA_FOVY_ORTHOGRAPHIC
-        self.orth_pos = orth_pos
+        self.camera: pr.Camera3D = pr.Camera3D(
+            self.position, target, (0, 1, 0),
+            self.fovy, self.perspective
+        )
+        self.saved_position: pr.Vector3 = self.position
+        self.saved_direction: pr.Vector3 = self.direction
+        self.saved_fovy: float = CAMERA_FOVY_ORTHOGRAPHIC
+        self.orth_pos: pr.Vector2 = orth_pos
 
     def toggle_perspective(self) -> None:
         """Switch between 2D (orthographic) and 3D (perspective) views."""

@@ -89,8 +89,6 @@ class App():
         font = pr.load_font("assets/superstar_memesbruh03.ttf")
         assets.add("arial", "font", font)
 
-        text, img, texture, mesh, model = None, None, None, None, None
-
         # Connections max_link_capacity
         for hub1, neighbors in self.map_data["connections"].items():
             for hub2, max_link_capacity in neighbors.items():
@@ -107,13 +105,12 @@ class App():
                     .texture = texture
                 assets.add(connection_name, "model", model)
 
-        text, img, texture, mesh, model = None, None, None, None, None
-
         return assets
 
     def generate_hub_values(self) -> None:
         """Unload existing and regenerate hub max_drones model assets."""
         assets = self.assets
+        color: pr.Color | tuple = (0, 0, 0, 0)
         font = assets.get("arial", "font")
         # Hubs max_drones
         for hub, data in self.map_data["hubs"].items():

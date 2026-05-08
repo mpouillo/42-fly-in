@@ -1,6 +1,7 @@
 """ Constants """
 
 import pyray as pr
+from tying import Dict
 
 
 ALLOWED_ZONES = [
@@ -30,7 +31,7 @@ ALLOWED_COLORS = [
     "yellow"
 ]
 
-COLOR_MAP = {
+COLOR_MAP: Dict[str, pr.Color | tuple[int, int, int, int]] = {
     "black": pr.BLACK,
     "blue": pr.BLUE,
     "brown": pr.BROWN,
