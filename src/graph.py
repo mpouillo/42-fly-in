@@ -161,6 +161,7 @@ class Graph(object):
             if (
                 0 < i < len(path) - 1
                 and path[i] == path[i + 1]
+                and path[i - 1] != path[i]
                 and self.map_data["hubs"][path[i]]["zone"] == "restricted"
             ):
                 x = (self.map_data["hubs"][path[i]]["x"]
