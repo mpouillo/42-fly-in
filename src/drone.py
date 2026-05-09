@@ -88,12 +88,39 @@ class Drone(Entity):
         if prev_target.name != self.target.name:
             (self.app.graph.drone_map[prev_target.name]
                 ["links"][self.target.name].append(self.id))
+        elif (
+                prev_target.name == self.target.name
+                and self.app.map_data["hubs"][self.target.name]["zone"]
+                == "restricted"
+                and 1 < self.step < len(self.path) - 1
+                and self.target.name != self.path[self.step - 2].name
+        ):
+            (self.app.graph.drone_map[self.path[self.step - 2].name]
+                ["links"][prev_target.name].append(self.id))
         self.moving = True
 
     def go_prev(self) -> None:
         """Go back one turn."""
+        prev_target: Any = self.path[self.step]
         self.step = max(0, self.step - 1)
         self.target = self.path[self.step]
+        # Append drone id to hub if not at start hub
+        if not self.target.name == self.path[0].name:
+            (self.app.graph.drone_map[self.target.name]
+                ["drones"].append(self.id))
+        # Append drone to connection if moving to a diff hub
+        if prev_target.name != self.target.name:
+            (self.app.graph.drone_map[self.target.name]
+                ["links"][prev_target.name].append(self.id))
+        elif (
+                prev_target.name == self.target.name
+                and self.app.map_data["hubs"][self.target.name]["zone"]
+                == "restricted"
+                and 0 < self.step < len(self.path) - 1
+                and self.target.name != self.path[self.step - 1].name
+        ):
+            (self.app.graph.drone_map[self.path[self.step - 1].name]
+                ["links"][self.target.name].append(self.id))
         self.moving = True
 
     def move(self, position: pr.Vector3, instant: bool = False) -> None:
