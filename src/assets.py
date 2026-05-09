@@ -36,24 +36,20 @@ class Assets:
 
     def unload(self, name: str) -> None:
         """Unload an asset from the library."""
-        obj: Any = self.assets.get(name)
-        if not obj:
+        asset: Any = self.assets.get(name)
+        if not asset:
             return
 
-        for part in obj.values():
-            match part:
-                case "texture":
-                    pr.unload_texture(self.assets[name]["texture"])
-                case "model":
-                    pr.unload_model(self.assets[name]["model"])
-                case "font":
-                    pr.unload_font(self.assets[name]["font"])
-                case "image":
-                    pr.unload_image(self.assets[name]["image"])
-                case "mesh":
-                    pr.unload_mesh(self.assets[name]["mesh"])
-                case _:
-                    pass
+        if "model" in asset:
+            pr.unload_model(asset["model"])
+        if "texture" in asset:
+            pr.unload_texture(asset["texture"])
+        if "image" in asset:
+            pr.unload_image(asset["image"])
+        if "font" in asset:
+            pr.unload_font(asset["font"])
+        if "mesh" in asset and "model" not in asset:
+            pr.unload_mesh(asset["mesh"])
 
     def remove(self, name: str) -> None:
         """Remove an asset from the library."""
