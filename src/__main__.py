@@ -22,5 +22,5 @@ if __name__ == "__main__":
     try:
         main()
     except BaseException as e:
-        print("An error occurred:", e)
+        print(f"An error occurred ({e.__class__.__name__}):", e)
         os._exit(1)
