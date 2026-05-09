@@ -20,6 +20,7 @@ class App():
     Keyword arguments:
     map_data -- dictionnary parsed from input map file
     """
+
     def __init__(self, map_data: Dict[Any, Any]) -> None:
         """Initialize required variables for program execution."""
         self.map_data: Dict[str, Any] = map_data
@@ -28,6 +29,8 @@ class App():
         self.compute_map_dimensions()
         self.color_toggle: bool = False
         self.turns: int = 0
+
+        self.reset_usage_map()
 
     def compute_map_dimensions(self) -> None:
         """Compute the dimensions of the map for use in other calculations."""
@@ -89,11 +92,19 @@ class App():
         font = pr.load_font("assets/superstar_memesbruh03.ttf")
         assets.add("arial", "font", font)
 
+        return assets
+
+    def generate_connection_values(self) -> None:
+        assets = self.assets
+        font = assets.get("arial", "font")
+
         # Connections max_link_capacity
-        for hub1, neighbors in self.map_data["connections"].items():
-            for hub2, max_link_capacity in neighbors.items():
+        for hub1, data1 in self.usage_map.items():
+            for hub2, data2 in data1["connections"].items():
                 connection_name = f"{hub1}-{hub2}"
-                text = str(max_link_capacity)
+                assets.unload(connection_name)
+                assets.remove(connection_name)
+                text = f"{data2['drones']}/{data2['total']}"
                 img = pr.image_text_ex(font, text, 96, 0, pr.RAYWHITE)
                 assets.add(connection_name, "image", img)
                 texture = pr.load_texture_from_image(img)
@@ -104,8 +115,6 @@ class App():
                 model.materials[0].maps[pr.MATERIAL_MAP_DIFFUSE]\
                     .texture = texture
                 assets.add(connection_name, "model", model)
-
-        return assets
 
     def generate_hub_values(self) -> None:
         """Unload existing and regenerate hub max_drones model assets."""
@@ -120,7 +129,10 @@ class App():
                 color = self.get_hub_color(data["zone"])
             else:
                 color = COLOR_MAP[data["color"]]
-            text = str(data["max_drones"])
+            text = (
+                f"{self.usage_map[hub]['drones']}/"
+                f"{self.usage_map[hub]['total']}"
+            )
             img = pr.image_text_ex(font, text, 96, 0, pr.WHITE)
             pr.image_alpha_clear(img, color, 0.1)
             pr.image_color_brightness(img, 10)
@@ -153,9 +165,12 @@ class App():
                 pr.draw_line_3d((start_x, 0.01, start_y),
                                 (end_x, 0.01, end_y), CONNECTION_COLOR)
                 # Max_link_capacity
-                pr.draw_model(self.assets.get(connection_name, "model"),
-                              pr.Vector3((end_x + start_x) / 2, 0.02,
-                                         (end_y + start_y) / 2), 1, pr.WHITE)
+                if self.color_toggle:
+                    pr.draw_model(
+                        self.assets.get(connection_name, "model"),
+                        pr.Vector3((end_x + start_x) / 2, 0.02,
+                                   (end_y + start_y) / 2), 1, pr.WHITE
+                    )
 
     def get_hub_color(self, hub_type: str) -> pr.Color:
         """Return hub colors depending on hub type."""
@@ -182,14 +197,15 @@ class App():
             pr.draw_cylinder((data["x"], 0, data["y"]), NODE_SIZE,
                              NODE_SIZE, 0.05, 32, color)
             # Max_drones
-            pr.draw_model(self.assets.get(hub, "model"),
-                          (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE)
+            if self.color_toggle:
+                pr.draw_model(
+                    self.assets.get(hub, "model"),
+                    (data["x"], 0.06, data["y"]), 1, pr.RAYWHITE
+                )
 
-    def print_drone_info(self,
-                         drones: List[Drone],
-                         reverse: bool = False) -> None:
+    def print_drone_info(self, drones: List[Drone]) -> None:
         """Print drone movements (D<id><hub/connection>) to the terminal."""
-        print(f"Turn {self.turns}:")
+        print(f"\nTurn {self.turns}:")
         for drone in drones:
             if (
                 drone.step > 0
@@ -289,12 +305,12 @@ class App():
             pr.draw_text_ex(font, key, key_pos, font_size, 0, pr.WHITE)
         pr.draw_text_ex(font, text, text_pos, font_size, 0, pr.WHITE)
 
-        # Colors
+        # Info
         position.y -= rect_size + margin // 2
         rectangle = pr.Rectangle(position.x - rect_size,
                                  position.y - rect_size,
                                  rect_size, rect_size)
-        text = "Toggle colors"
+        text = "Toggle info"
         key = "E"
         text_size = pr.measure_text_ex(font, text, font_size, 0)
         key_size = pr.measure_text_ex(font, key, font_size, 0)
@@ -366,6 +382,8 @@ class App():
         """Run the simulation."""
         camera = Camera((-1, 2, 0), (0, -1, 0), self.map_center)
         self.assets = self.load_assets()
+        self.generate_connection_values()
+        self.generate_hub_values()
         self.drones = self.load_drones()
 
         while not pr.window_should_close():
@@ -377,6 +395,8 @@ class App():
             # Toggle better colors
             if pr.is_key_pressed(pr.KEY_E):
                 self.color_toggle = not self.color_toggle
+                self.generate_hub_values()
+                self.generate_connection_values()
 
             # Drone movement
             self.graph.reset()
@@ -389,7 +409,11 @@ class App():
                     self.turns += 1
                     for drone in self.drones:
                         drone.go_next()
+                    self.compute_usage_map()
                     self.print_drone_info(self.drones)
+                    if self.color_toggle:
+                        self.generate_hub_values()
+                        self.generate_connection_values()
                 if (
                     pr.is_key_down(pr.KEY_LEFT) and
                     any(drone.step != 0 for drone in self.drones)
@@ -397,9 +421,12 @@ class App():
                     self.turns = max(0, self.turns - 1)
                     for drone in self.drones:
                         drone.go_prev()
-                    self.print_drone_info(self.drones, True)
+                    self.compute_usage_map()
+                    self.print_drone_info(self.drones)
+                    if self.color_toggle:
+                        self.generate_hub_values()
+                        self.generate_connection_values()
 
-            self.generate_hub_values()
             pr.begin_drawing()
             pr.clear_background(pr.SKYBLUE)
             pr.begin_mode_3d(camera.camera)
@@ -425,3 +452,50 @@ class App():
             drone.unload()
 
         pr.close_window()
+
+    def reset_usage_map(self) -> None:
+        """Reset hub/connection usage map."""
+        self.usage_map: Dict[str, Any] = {
+            hub: {} for hub in self.map_data["hubs"].keys()
+        }
+
+        for hub, data in self.usage_map.items():
+            self.usage_map[hub] = {
+                "drones": 0,
+                "total": self.map_data["hubs"][hub]["max_drones"],
+                "connections": {
+                    hub: {} for hub in self.map_data["connections"][hub].keys()
+                }
+            }
+
+        for hub1, data in self.usage_map.items():
+            for hub2 in data["connections"].keys():
+                self.usage_map[hub1]["connections"][hub2] = {
+                    "drones": 0,
+                    "total": self.map_data["connections"][hub1][hub2]
+                }
+
+    def compute_usage_map(self) -> None:
+        """Save hub and connection usage to a map."""
+        self.reset_usage_map()
+        for hub in self.usage_map.keys():
+            for drone in self.drones:
+                if (
+                    drone.path[drone.step].name == hub
+                    and not (
+                        0 < drone.step < len(drone.path) - 1
+                        and drone.path[drone.step - 1].name
+                        != drone.path[drone.step].name
+                        and drone.path[drone.step].name
+                        == drone.path[drone.step + 1].name
+                        and self.map_data["hubs"][drone.path[drone.step].name]
+                        ["zone"] == "restricted"
+                    )
+                ):
+                    self.usage_map[hub]["drones"] += 1
+
+        for hub, data in self.graph.drone_map.items():
+            for link in data["links"]:
+                drones = len(self.graph.drone_map[hub]["links"][link])
+                self.usage_map[hub]["connections"][link]["drones"] += drones
+                self.usage_map[link]["connections"][hub]["drones"] += drones
