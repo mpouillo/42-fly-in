@@ -51,8 +51,6 @@ COLOR_MAP: Dict[str, pr.Color | Tuple[int, int, int, int]] = {
     "yellow": pr.YELLOW
 }
 
-SCREEN_WIDTH = 1280
-SCREEN_HEIGHT = 720
 TARGET_FPS = 60
 CAMERA_FOVY_PERSPECTIVE = 80.0
 CAMERA_FOVY_ORTHOGRAPHIC = 10.0
