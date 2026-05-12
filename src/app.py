@@ -205,7 +205,7 @@ class App():
 
     def print_drone_info(self, drones: List[Drone]) -> None:
         """Print drone movements (D<id><hub/connection>) to the terminal."""
-        print(f"\nTurn {self.turns}:")
+        # print(f"\nTurn {self.turns}:")
         for drone in drones:
             if (
                 drone.step > 0
